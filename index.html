@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="id" x-data="loginApp()">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login Portal Monitoring</title>
+
+    <!-- Bootstrap -->
+    <link rel="stylesheet" href="./assets/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="./assets/css/bootstrap-icons.css" />
+
+    <!-- SweetAlert2 -->
+    <script src="./assets/js/sweetalert2.all.min.js"></script>
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="./assets/css/style.css" />
+
+    <!-- Scripts -->
+    <script src="./assets/js/axios.min.js"></script>
+    <script src="./assets/js/config.js"></script>
+    <script defer src="./assets/js/alpine.min.js"></script>
+  </head>
+
+  <body
+    class="d-flex align-items-center justify-content-center"
+    style="background: linear-gradient(120deg, #007bff, #00c6ff); min-height: 100vh;"
+  >
+    <div class="login-card p-4 bg-white shadow-lg rounded-4" x-data="loginApp()">
+      <h4 class="text-center fw-bold mb-2">Sign In</h4>
+      <p class="text-center text-muted mb-4">
+        Masuk ke portal monitoring Anda
+      </p>
+
+      <template x-if="error">
+        <div class="alert alert-danger py-2" x-text="error"></div>
+      </template>
+
+      <form @submit.prevent="handleLogin">
+        <div class="mb-3">
+          <label class="form-label">Username</label>
+          <input
+            type="text"
+            class="form-control"
+            placeholder="Masukkan username"
+            x-model="form.username"
+            required
+          />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label d-flex justify-content-between">
+            <span>Password</span>
+          </label>
+          <div class="input-group">
+            <input
+              :type="showPassword ? 'text' : 'password'"
+              class="form-control"
+              placeholder="Masukkan password"
+              x-model="form.password"
+              required
+            />
+            <button
+              class="btn btn-outline-secondary"
+              type="button"
+              @click="showPassword = !showPassword"
+              tabindex="-1"
+            >
+              <i :class="showPassword ? 'bi bi-eye-slash-fill' : 'bi bi-eye-fill'"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="d-grid">
+          <button
+            type="submit"
+            class="btn btn-primary"
+            :disabled="loading"
+            x-text="loading ? 'Signing in...' : 'Sign In'"
+          ></button>
+        </div>
+      </form>
+    </div>
+
+    <script>
+      function loginApp() {
+        return {
+          form: { username: "", password: "" },
+          error: "",
+          loading: false,
+          showPassword: false,
+          handleLogin() {
+            this.error = "";
+            this.loading = true;
+
+            const formData = new FormData();
+            formData.append("username", this.form.username);
+            formData.append("password", this.form.password);
+
+            axios
+              .post(`${env.API_URL}/auth/login`, formData, {
+                headers: { "Content-Type": "multipart/form-data" },
+                withCredentials: true,
+              })
+              .then((res) => {
+                const { access_token, status } = res.data;
+                if (status === 200 && access_token) {
+                  Swal.fire({
+                    icon: "success",
+                    title: "Login Berhasil!",
+                    text: "Selamat datang di portal monitoring.",
+                    timer: 1500,
+                    showConfirmButton: false,
+                  });
+
+                  return axios.get(`${env.API_URL}/auth/get-current-user`, {
+                    withCredentials: true,
+                  });
+                } else {
+                  throw new Error("Login gagal: Invalid response");
+                }
+              })
+              .then((response) => {
+                const user = response.data;
+                const roles = user.roles || [];
+                localStorage.setItem("user_roles", roles.join(","));
+                localStorage.setItem("username", user.username);
+                localStorage.setItem("email", user.email);
+
+                setTimeout(() => {
+                  window.location.href = "dashboard.html";
+                }, 1500);
+              })
+              .catch((err) => {
+                console.error("Login error:", err);
+                this.error = "Login gagal: username atau password salah.";
+
+                Swal.fire({
+                  icon: "error",
+                  title: "Login Gagal!",
+                  text: "Username atau password salah.",
+                });
+              })
+              .finally(() => {
+                this.loading = false;
+              });
+          },
+        };
+      }
+    </script>
+  </body>
+</html>

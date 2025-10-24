@@ -1,0 +1,207 @@
+<!-- partials/set-roles.html -->
+<div class="container py-4" x-data="userRolesTable()" x-init="loadData()">
+    <!-- HEADER -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="fw-bold mb-0">
+            <i class="bi bi-people-fill me-2"></i>Daftar Roles Pengguna
+        </h4>
+        <button
+            class="btn btn-outline-secondary btn-sm"
+            hx-get="./dashboard.html"
+            hx-target="#main-content"
+            hx-swap="innerHTML"
+            hx-select="#main-content > *"
+        >
+            <i class="bi bi-arrow-left"></i> Kembali
+        </button>
+    </div>
+
+    <!-- SEARCH & LIMIT -->
+    <div class="row mb-3">
+        <div class="col-md-6 mb-2 mb-md-0">
+            <input
+                type="text"
+                class="form-control"
+                placeholder="Cari nama atau email..."
+                x-model="search"
+                @input.debounce.500ms="onSearch"
+            >
+        </div>
+        <div class="col-md-3">
+            <select class="form-select" x-model.number="limit" @change="changeLimit">
+                <option value="5">5 per halaman</option>
+                <option value="10">10 per halaman</option>
+                <option value="20">20 per halaman</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- LOADING -->
+    <template x-if="loading">
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary mb-3" role="status"></div>
+            <p>Memuat data pengguna...</p>
+        </div>
+    </template>
+
+    <!-- FORM TAMBAH ROLE -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <h5 class="fw-semibold mb-3">
+                <i class="bi bi-plus-circle me-2"></i>Tambah Role Pengguna
+            </h5>
+
+            <!-- Pilih Karyawan -->
+            <div class="mb-4 position-relative">
+                <label class="form-label fw-semibold">Pilih Karyawan</label>
+                <input
+                    type="text"
+                    class="form-control"
+                    placeholder="Cari nama..."
+                    x-model="searchEmployee"
+                    @input.debounce.300ms="filterEmployees"
+                >
+                <div class="list-group position-absolute w-100 z-3 mt-1" x-show="filteredEmployees.length > 0">
+                    <template x-for="emp in filteredEmployees" :key="emp.id">
+                        <button type="button" class="list-group-item list-group-item-action"
+                            @click="selectEmployee(emp)">
+                            <span x-text="emp.name"></span>
+                            <small class="d-block text-muted" x-text="emp.email"></small>
+                        </button>
+                    </template>
+                </div>
+                <div class="mt-1 small text-muted" x-show="selectedEmployee">
+                    Terpilih: <strong x-text="selectedEmployee.name"></strong>
+                </div>
+            </div>
+
+            <!-- Pilih Aplikasi & Role -->
+            <div class="row">
+                <!-- APLIKASI -->
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Pilih Aplikasi</label>
+                    <div class="border rounded p-3 bg-light" style="max-height: 220px; overflow-y: auto;">
+                        <template x-for="app in applications" :key="app.name">
+                            <div class="mb-2">
+                                <div class="fw-semibold mb-1">
+                                    <i class="bi bi-folder2-open me-1 text-primary"></i>
+                                    <span x-text="app.name"></span>
+                                </div>
+                                <div class="ms-3">
+                                    <template x-for="mod in app.modules" :key="mod">
+                                        <div class="form-check mb-1">
+                                        <input
+                                            class="form-check-input"
+                                            type="checkbox"
+                                            :id="app.name + '-' + mod"
+                                            :value="mod"
+                                            x-model="selectedApps"
+                                        >
+                                        <label
+                                            class="form-check-label"
+                                            :for="app.name + '-' + mod"
+                                            x-text="mod"
+                                        ></label>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- ROLES -->
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Pilih Role</label>
+                    <div class="border rounded p-3 bg-light" style="max-height: 220px; overflow-y: auto;">
+                        <template x-for="role in allRoles" :key="role">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" :id="'role-' + role" :value="role" x-model="selectedRoles">
+                                <label class="form-check-label" :for="'role-' + role" x-text="role"></label>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tombol Simpan -->
+            <div class="text-end mt-4">
+                <button class="btn btn-primary"
+                    @click="saveNewRole"
+                    :disabled="!selectedEmployee || selectedApps.length === 0 || selectedRoles.length === 0"
+                >
+                    <i class="bi bi-save me-1"></i> Simpan
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TABLE LIST USERS -->
+    <template x-if="!loading && users.length > 0">
+        <div class="card shadow-sm">
+            <div class="card-body p-0">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th width="5%">#</th>
+                            <th>Nama</th>
+                            <th>Email</th>
+                            <th width="20%" class="text-center">Jumlah Roles</th>
+                            <th width="10%" class="text-center">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="(user, index) in users" :key="user.id">
+                            <tr>
+                                <td x-text="offset + index + 1"></td>
+                                <td x-text="user.name"></td>
+                                <td x-text="user.email"></td>
+                                <td class="text-center" x-text="user.roles.length + ' Roles'"></td>
+                                <td class="text-center">
+                                    <button 
+                                        class="btn btn-sm btn-outline-primary"
+                                        hx-get="./partials/role-detail.html"
+                                        hx-target="#main-content"
+                                        hx-swap="innerHTML"
+                                        hx-vals="js:{ id: user.id }"
+                                    >
+                                        <i class="bi bi-eye"></i> Detail
+                                    </button>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </template>
+
+    <!-- EMPTY STATE -->
+    <template x-if="!loading && users.length === 0">
+        <div class="text-center py-5 text-muted">
+            <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+            <p>Tidak ada data pengguna yang cocok.</p>
+        </div>
+    </template>
+
+    <!-- PAGINATION -->
+    <div
+        class="d-flex justify-content-between align-items-center mt-3"
+        x-show="!loading && total > 0"
+    >
+        <small class="text-muted">
+            Menampilkan <span x-text="offset + 1"></span> -
+            <span x-text="Math.min(offset + limit, total)"></span> dari
+            <span x-text="total"></span> pengguna
+        </small>
+
+        <div class="btn-group">
+            <button class="btn btn-outline-secondary btn-sm" :disabled="offset === 0" @click="prevPage">
+                <i class="bi bi-chevron-left"></i>
+            </button>
+            <button class="btn btn-outline-secondary btn-sm" :disabled="offset + limit >= total" @click="nextPage">
+                <i class="bi bi-chevron-right"></i>
+            </button>
+        </div>
+    </div>
+</div>
