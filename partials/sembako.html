@@ -1,0 +1,639 @@
+<!-- partials/sembako.html -->
+<div class="container py-4">
+  <!-- HEADER -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h4 class="fw-bold mb-0"><i class="bi bi-box-seam me-2"></i>Sembako Management</h4>
+      <p class="text-muted mb-0">Kelola jenis, konfigurasi, dan distribusi sembako karyawan</p>
+    </div>
+    <div class="d-flex gap-2">
+      <button class="btn btn-primary btn-sm">
+        <i class="bi bi-plus-lg"></i> Tambah Jenis
+      </button>
+      <button class="btn btn-success btn-sm">
+        <i class="bi bi-gear-fill"></i> Konfigurasi
+      </button>
+      <button class="btn btn-info btn-sm">
+        <i class="bi bi-person-plus-fill"></i> Berikan Sembako
+      </button>
+      <button class="btn btn-outline-secondary btn-sm"
+              hx-get="./index.html"
+              hx-target="#main-content"
+              hx-swap="innerHTML"
+              hx-select="#main-content > *">
+        <i class="bi bi-arrow-left"></i> Kembali
+      </button>
+    </div>
+  </div>
+
+  <!-- STATS CARDS -->
+  <div class="row mb-4">
+    <div class="col-md-3 mb-3">
+      <div class="card bg-primary text-white">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <h6 class="card-title mb-0">Total Jenis</h6>
+              <h3 class="mb-0">1</h3>
+            </div>
+            <i class="bi bi-box-seam fs-1 opacity-50"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3 mb-3">
+      <div class="card bg-success text-white">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <h6 class="card-title mb-0">Konfigurasi Aktif</h6>
+              <h3 class="mb-0">1</h3>
+            </div>
+            <i class="bi bi-gear-fill fs-1 opacity-50"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3 mb-3">
+      <div class="card bg-info text-white">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <h6 class="card-title mb-0">Karyawan Terima</h6>
+              <h3 class="mb-0">1</h3>
+            </div>
+            <i class="bi bi-people-fill fs-1 opacity-50"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3 mb-3">
+      <div class="card bg-warning text-white">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <h6 class="card-title mb-0">Bulan Ini</h6>
+              <h3 class="mb-0">1</h3>
+            </div>
+            <i class="bi bi-calendar-fill fs-1 opacity-50"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <ul class="nav nav-tabs mb-4" role="tablist">
+    <li class="nav-item">
+      <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#types-tab" type="button">
+        <i class="bi bi-box-seam me-1"></i> Jenis Sembako
+      </button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link" data-bs-toggle="tab" data-bs-target="#config-tab" type="button">
+        <i class="bi bi-gear me-1"></i> Konfigurasi
+      </button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link" data-bs-toggle="tab" data-bs-target="#employee-tab" type="button">
+        <i class="bi bi-people me-1"></i> Karyawan
+      </button>
+    </li>
+  </ul>
+
+  <div class="tab-content">
+    <!-- JENIS SEMBAKO TAB -->
+    <div class="tab-pane fade show active" id="types-tab">
+      <!-- SEARCH & FILTER -->
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <div class="input-group">
+            <span class="input-group-text"><i class="bi bi-search"></i></span>
+            <input type="text" class="form-control" placeholder="Cari jenis sembako...">
+          </div>
+        </div>
+        <div class="col-md-6">
+          <select class="form-select">
+            <option value="">Semua Status</option>
+            <option value="true">Aktif</option>
+            <option value="false">Non Aktif</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- TABLE JENIS SEMBAKO -->
+      <div class="card shadow-sm">
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th width="5%">#</th>
+                  <th>Nama Jenis</th>
+                  <th>Deskripsi</th>
+                  <th width="15%" class="text-center">Status</th>
+                  <th width="10%" class="text-center">Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>1</td>
+                  <td>
+                    <strong>Sembako</strong>
+                  </td>
+                  <td>
+                    <small>1 Karung Beras & 1 Liter Minyak</small>
+                  </td>
+                  <td class="text-center">
+                    <span class="badge bg-success">Aktif</span>
+                  </td>
+                  <td class="text-center">
+                    <div class="btn-group">
+                      <button class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-pencil"></i>
+                      </button>
+                      <button class="btn btn-outline-danger btn-sm">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- KONFIGURASI TAB -->
+    <div class="tab-pane fade" id="config-tab">
+      <!-- SEARCH & FILTER -->
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <div class="input-group">
+            <span class="input-group-text"><i class="bi bi-search"></i></span>
+            <input type="text" class="form-control" placeholder="Cari periode atau nilai...">
+          </div>
+        </div>
+        <div class="col-md-6">
+          <select class="form-select">
+            <option value="">Semua Periode</option>
+            <option value="2025-10">2025-10</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- TABLE KONFIGURASI -->
+      <div class="card shadow-sm">
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th width="5%">#</th>
+                  <th>Jenis Sembako</th>
+                  <th>Periode</th>
+                  <th>Nilai Default</th>
+                  <th>Deskripsi</th>
+                  <th width="15%" class="text-center">Status</th>
+                  <th width="10%" class="text-center">Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>1</td>
+                  <td>
+                    <span>Sembako</span>
+                  </td>
+                  <td>
+                    <span class="badge bg-info">Oct 2025</span>
+                  </td>
+                  <td>
+                    <strong>10000</strong>
+                  </td>
+                  <td>
+                    <small>Nilai tunai pengganti Sembako jika tidak ada stok.</small>
+                  </td>
+                  <td class="text-center">
+                    <span class="badge bg-success">Aktif</span>
+                  </td>
+                  <td class="text-center">
+                    <button class="btn btn-outline-primary btn-sm">
+                      <i class="bi bi-pencil"></i>
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- KARYAWAN TAB -->
+    <div class="tab-pane fade" id="employee-tab">
+      <!-- SEARCH & FILTER -->
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <div class="input-group">
+            <span class="input-group-text"><i class="bi bi-search"></i></span>
+            <input type="text" class="form-control" placeholder="Cari nama atau email karyawan...">
+          </div>
+        </div>
+        <div class="col-md-6">
+          <select class="form-select">
+            <option value="">Semua Jenis</option>
+            <option value="1">Sembako</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- TABLE KARYAWAN -->
+      <div class="card shadow-sm">
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th width="5%">#</th>
+                  <th>Karyawan</th>
+                  <th>Email</th>
+                  <th>Jenis Sembako</th>
+                  <th>Catatan</th>
+                  <th width="15%" class="text-center">Status</th>
+                  <th width="10%" class="text-center">Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>1</td>
+                  <td>
+                    <strong>Tidak diketahui</strong>
+                  </td>
+                  <td>
+                    <span>yuga@fiber.net.id</span>
+                  </td>
+                  <td>
+                    <span class="badge bg-primary">Sembako</span>
+                  </td>
+                  <td>
+                    <small>Tidak ada catatan</small>
+                  </td>
+                  <td class="text-center">
+                    <span class="badge bg-success">Aktif</span>
+                  </td>
+                  <td class="text-center">
+                    <button class="btn btn-outline-primary btn-sm">
+                      <i class="bi bi-pencil"></i>
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- API Integration Script -->
+<script>
+// Sembako API Integration
+function initializeSembako() {
+  console.log('HTMX content loaded, initializing sembako data...');
+
+  // Load data when content is ready
+  loadSembakoData();
+}
+
+// Handle both direct access and HTMX loading
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initializeSembako);
+} else {
+  // For HTMX loaded content
+  if (typeof htmx !== 'undefined') {
+    htmx.on('htmx:afterSwap', function(evt) {
+      if (evt.target.id === 'main-content') {
+        console.log('HTMX afterSwap detected for main-content');
+        initializeSembako();
+      }
+    });
+  }
+
+  // Fallback for direct access
+  initializeSembako();
+}
+
+async function loadSembakoData() {
+  const baseUrl = window.env?.VITE_API_URL || 'http://localhost:8000';
+
+  console.log('🚀 Starting API calls to:', baseUrl);
+  console.log('📡 Endpoint URLs:');
+  console.log(`  - Types: ${baseUrl}/incentive/incentive-types`);
+  console.log(`  - Configs: ${baseUrl}/incentive/incentive-config`);
+  console.log(`  - Employees: ${baseUrl}/incentive/employee-incentives`);
+
+  try {
+    // Show loading states
+    showLoadingStates();
+
+    // Construct endpoint URLs
+    const endpoints = [
+      `${baseUrl}/incentive/incentive-types`,
+      `${baseUrl}/incentive/incentive-config`,
+      `${baseUrl}/incentive/employee-incentives`
+    ];
+
+    console.log('🔄 Making parallel fetch requests...');
+    const startTime = Date.now();
+
+    // Fetch all data in parallel
+    const [typesResponse, configsResponse, employeesResponse] = await Promise.all([
+      fetch(endpoints[0]),
+      fetch(endpoints[1]),
+      fetch(endpoints[2])
+    ]);
+
+    const endTime = Date.now();
+    console.log(`⏱️ Fetch requests completed in ${endTime - startTime}ms`);
+
+    // Log response statuses
+    console.log('📊 Response Statuses:');
+    console.log(`  - Types: ${typesResponse.status} ${typesResponse.statusText}`);
+    console.log(`  - Configs: ${configsResponse.status} ${configsResponse.statusText}`);
+    console.log(`  - Employees: ${employeesResponse.status} ${employeesResponse.statusText}`);
+
+    // Parse responses with error handling
+    let types, configs, employees;
+
+    try {
+      types = typesResponse.ok ? await typesResponse.json() : { data: [] };
+      console.log('✅ Types data parsed:', types);
+    } catch (e) {
+      console.error('❌ Error parsing types response:', e);
+      types = { data: [] };
+    }
+
+    try {
+      configs = configsResponse.ok ? await configsResponse.json() : { data: [] };
+      console.log('✅ Configs data parsed:', configs);
+    } catch (e) {
+      console.error('❌ Error parsing configs response:', e);
+      configs = { data: [] };
+    }
+
+    try {
+      employees = employeesResponse.ok ? await employeesResponse.json() : { data: [] };
+      console.log('✅ Employees data parsed:', employees);
+    } catch (e) {
+      console.error('❌ Error parsing employees response:', e);
+      employees = { data: [] };
+    }
+
+    // Check if we have real data
+    const hasRealData = (types.data?.length > 0) || (configs.data?.length > 0) || (employees.data?.length > 0);
+
+    if (hasRealData) {
+      console.log('🎉 Real data detected! Updating UI...');
+      // Update UI with real data
+      updateTypesTable(types.data || []);
+      updateConfigTable(configs.data || []);
+      updateEmployeeTable(employees.data || []);
+      updateStatsCards(types.data || [], configs.data || [], employees.data || []);
+
+      console.log('✅ Sembako data loaded successfully');
+      console.log('Types:', types.data?.length || 0);
+      console.log('Configs:', configs.data?.length || 0);
+      console.log('Employees:', employees.data?.length || 0);
+    } else {
+      console.log('⚠️ No real data found, keeping demo data');
+      // Clear loading states but don't update with empty data
+      clearLoadingStates();
+    }
+
+  } catch (error) {
+    console.error('❌ Network error loading sembako data:', error);
+    console.log('📦 Using fallback demo data');
+
+    // Clear loading states
+    clearLoadingStates();
+
+    // Show error notification but keep demo data visible
+    showErrorNotification();
+  }
+}
+
+function showLoadingStates() {
+  console.log('⏳ Showing loading states...');
+  // Update stats cards to show loading
+  document.querySelectorAll('.card h3').forEach(el => {
+    el.textContent = '...';
+  });
+
+  // You can add loading spinners if needed
+}
+
+function clearLoadingStates() {
+  console.log('✋ Clearing loading states...');
+  // Reset stats cards to show default values when no data
+  const statCards = document.querySelectorAll('.card h3');
+  if (statCards.length >= 4) {
+    statCards[0].textContent = '1';  // Total Types
+    statCards[1].textContent = '1';  // Active Configs
+    statCards[2].textContent = '1';  // Total Employees
+    statCards[3].textContent = '1';  // This Month
+  }
+}
+
+function updateTypesTable(types) {
+  const tbody = document.querySelector('#types-tab tbody');
+  if (!tbody || !types || types.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" class="text-center">Tidak ada data jenis sembako</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = types.map((type, index) => `
+    <tr>
+      <td>${index + 1}</td>
+      <td>
+        <strong>${type.name || 'Unknown'}</strong>
+      </td>
+      <td>
+        <small>${type.descriptions || 'Tidak ada deskripsi'}</small>
+      </td>
+      <td class="text-center">
+        <span class="badge ${type.is_active ? 'bg-success' : 'bg-danger'}">
+          ${type.is_active ? 'Aktif' : 'Non Aktif'}
+        </span>
+      </td>
+      <td class="text-center">
+        <div class="btn-group">
+          <button class="btn btn-outline-primary btn-sm" onclick="editType(${JSON.stringify(type).replace(/"/g, '&quot;')})">
+            <i class="bi bi-pencil"></i>
+          </button>
+          <button class="btn btn-outline-danger btn-sm" onclick="deleteType(${type.pk})">
+            <i class="bi bi-trash"></i>
+          </button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function updateConfigTable(configs) {
+  const tbody = document.querySelector('#config-tab tbody');
+  if (!tbody || !configs || configs.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" class="text-center">Tidak ada data konfigurasi</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = configs.map((config, index) => {
+    const periodeFormatted = formatPeriode(config.periode);
+    return `
+    <tr>
+      <td>${index + 1}</td>
+      <td>
+        <span>${config.incentive_type_id ? getTypeName(config.incentive_type_id, configs) : 'Unknown'}</span>
+      </td>
+      <td>
+        <span class="badge bg-info">${periodeFormatted}</span>
+      </td>
+      <td>
+        <strong>${config.default_value || 'N/A'}</strong>
+      </td>
+      <td>
+        <small>${config.descriptions || 'Tidak ada deskripsi'}</small>
+      </td>
+      <td class="text-center">
+        <span class="badge ${config.is_active ? 'bg-success' : 'bg-danger'}">
+          ${config.is_active ? 'Aktif' : 'Non Aktif'}
+        </span>
+      </td>
+      <td class="text-center">
+        <button class="btn btn-outline-primary btn-sm" onclick="editConfig(${JSON.stringify(config).replace(/"/g, '&quot;')})">
+          <i class="bi bi-pencil"></i>
+        </button>
+      </td>
+    </tr>
+  `;
+  }).join('');
+}
+
+function updateEmployeeTable(employees) {
+  const tbody = document.querySelector('#employee-tab tbody');
+  if (!tbody || !employees || employees.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" class="text-center">Tidak ada data karyawan</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = employees.map((employee, index) => `
+    <tr>
+      <td>${index + 1}</td>
+      <td>
+        <strong>${employee.employee_id ? `ID: ${employee.employee_id}` : 'Tidak diketahui'}</strong>
+      </td>
+      <td>
+        <span>${employee.email || 'N/A'}</span>
+      </td>
+      <td>
+        <span class="badge bg-primary">${employee.incentive_type_id ? 'Sembako' : 'Unknown'}</span>
+      </td>
+      <td>
+        <small>${employee.notes || 'Tidak ada catatan'}</small>
+      </td>
+      <td class="text-center">
+        <span class="badge ${employee.is_active ? 'bg-success' : 'bg-danger'}">
+          ${employee.is_active ? 'Aktif' : 'Non Aktif'}
+        </span>
+      </td>
+      <td class="text-center">
+        <button class="btn btn-outline-primary btn-sm" onclick="editEmployee(${JSON.stringify(employee).replace(/"/g, '&quot;')})">
+          <i class="bi bi-pencil"></i>
+        </button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function updateStatsCards(types, configs, employees) {
+  const totalTypes = types.length;
+  const activeConfigs = configs.filter(c => c.is_active).length;
+  const totalEmployees = employees.filter(e => e.is_active).length;
+
+  // Calculate this month
+  const currentMonth = new Date().toISOString().slice(0, 7);
+  const thisMonth = employees.filter(e => {
+    return e.created_at && e.created_at.startsWith(currentMonth);
+  }).length;
+
+  // Update stat cards
+  const statCards = document.querySelectorAll('.card h3');
+  if (statCards.length >= 4) {
+    statCards[0].textContent = totalTypes;
+    statCards[1].textContent = activeConfigs;
+    statCards[2].textContent = totalEmployees;
+    statCards[3].textContent = thisMonth;
+  }
+}
+
+function formatPeriode(periode) {
+  if (!periode) return 'N/A';
+  const [year, month] = periode.split('-');
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  return `${monthNames[parseInt(month) - 1]} ${year}`;
+}
+
+function getTypeName(typeId, configs) {
+  // Simple type mapping - in real app, this would use types data
+  return typeId === 1 ? 'Sembako' : `Type ${typeId}`;
+}
+
+function editType(type) {
+  console.log('Edit type:', type);
+  alert(`Edit ${type.name} - This feature is coming soon!`);
+}
+
+function deleteType(id) {
+  if (confirm('Apakah Anda yakin ingin menghapus data ini?')) {
+    console.log('Delete type:', id);
+    alert('Delete feature coming soon!');
+  }
+}
+
+function editConfig(config) {
+  console.log('Edit config:', config);
+  alert(`Edit konfigurasi periode ${config.periode} - This feature is coming soon!`);
+}
+
+function editEmployee(employee) {
+  console.log('Edit employee:', employee);
+  alert(`Edit data ${employee.email} - This feature is coming soon!`);
+}
+
+function showErrorNotification() {
+  // Create a simple notification
+  const notification = document.createElement('div');
+  notification.className = 'alert alert-warning alert-dismissible fade show position-fixed';
+  notification.style.top = '20px';
+  notification.style.right = '20px';
+  notification.style.zIndex = '9999';
+  notification.style.maxWidth = '400px';
+  notification.innerHTML = `
+    <strong>Peringatan!</strong>
+    Gagal memuat data dari server. Menampilkan data demo.
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  `;
+
+  document.body.appendChild(notification);
+
+  // Auto-remove after 5 seconds
+  setTimeout(() => {
+    if (notification.parentNode) {
+      notification.parentNode.removeChild(notification);
+    }
+  }, 5000);
+}
+
+console.log('Sembako Management loaded - Ready for API integration');
+</script>
