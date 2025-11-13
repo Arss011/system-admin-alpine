@@ -9,6 +9,9 @@
     <link rel="stylesheet" href="./assets/css/bootstrap.min.css" />
     <link rel="stylesheet" href="./assets/css/bootstrap-icons.css" />
 
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="./assets/css/style.css" />
+
     <!-- HTMX -->
     <script src="./assets/js/htmx.min.js"></script>
 
@@ -22,54 +25,203 @@
     <script src="./assets/js/config.js"></script>
 
     <!-- App (Define Alpine components before Alpine init) -->
-    <script src="./assets/js/app.js" defer></script>
+    <script src="./assets/js/app.js"></script>
 
     <!-- AlpineJS Core (defered execution) -->
     <script defer src="./assets/js/alpinejs@3.x.x/dist/cdn.min.js"></script>
   </head>
 
-  <body class="bg-light" x-cloak>
-    <!-- HEADER -->
-    <header
-      class="dashboard-header d-flex justify-content-between align-items-center p-3 bg-white border-bottom shadow-sm"
-    >
-      <!-- Left: User info -->
-      <div class="d-flex align-items-center user-info" x-cloak>
-        <img
-          src="./assets/img/users.png"
-          alt="User Avatar"
-          class="rounded-circle me-2"
-          width="48"
-          height="48"
-        />
-        <div>
-          <h6 class="mb-0 fw-semibold" x-text="username"></h6>
-          <small class="text-muted" x-text="userEmail"></small>
+  <body x-cloak>
+    <!-- MODERN NAVIGATION HEADER -->
+    <header class="modern-header" x-data="navigationHeader()" x-init="initNavigation()">
+      <!-- Top Navigation Bar -->
+      <nav class="top-nav">
+        <div class="nav-left">
+          <!-- Logo & Brand -->
+          <div class="brand-section">
+            <div class="logo-container">
+              <i class="bi bi-grid-3x3-gap-fill brand-icon"></i>
+            </div>
+            <!-- <div class="brand-text">
+              <h1 class="brand-title">System Admin</h1>
+              <span class="brand-subtitle">Portal Management</span>
+            </div> -->
+          </div>
+
+          <!-- Main Navigation -->
+          <div class="nav-menu" :class="{'mobile-open': mobileMenuOpen}">
+            <a href="#"
+               class="nav-item active"
+               @click="setActiveNav($event, 'dashboard')">
+              <i class="bi bi-speedometer2"></i>
+              <span>Dashboard</span>
+            </a>
+
+            <!-- Incentive Menu with Dropdown -->
+            <div class="nav-dropdown" x-data="{
+              isOpen: false,
+              toggle() {
+                this.isOpen = !this.isOpen;
+              },
+              close() {
+                this.isOpen = false;
+              }
+            }" @click.away="close()">
+              <button class="nav-item dropdown-toggle"
+                      @click="setActiveNav($event, 'incentive'); toggle()">
+                <i class="bi bi-gift"></i>
+                <span>Incentive</span>
+                <i class="bi bi-chevron-down dropdown-arrow-sm" :class="{'rotate': isOpen}"></i>
+              </button>
+
+              <div class="dropdown-menu" x-show="isOpen" x-transition>
+                <a href="#"
+                   class="dropdown-item"
+                   @click.prevent="setActiveNav($event, 'sembako'); close()">
+                  <i class="bi bi-box-seam"></i>
+                  Sembako
+                </a>
+                <a href="#"
+                   class="dropdown-item"
+                   @click.prevent="setActiveNav($event, 'other-incentives'); close()">
+                  <i class="bi bi-star"></i>
+                  Other Incentives
+                </a>
+              </div>
+            </div>
+
+            <a href="#"
+               class="nav-item"
+               @click="setActiveNav($event, 'settings')">
+              <i class="bi bi-gear"></i>
+              <span>Settings</span>
+            </a>
+            <a href="#"
+               class="nav-item"
+               @click="setActiveNav($event, 'reports')">
+              <i class="bi bi-graph-up"></i>
+              <span>Reports</span>
+            </a>
+          </div>
         </div>
-      </div>
 
-      <!-- Middle: Title -->
-      <div class="text-center d-none d-md-block">
-        <h5 class="fw-bold mb-0">Dashboard</h5>
-      </div>
+        <div class="nav-right">
+          <!-- Search Bar -->
+          <!-- <div class="search-container" x-show="!mobileMenuOpen">
+            <div class="search-input-wrapper">
+              <i class="bi bi-search search-icon"></i>
+              <input type="text"
+                     class="search-input"
+                     placeholder="Quick search..."
+                     x-model="searchQuery"
+                     @focus="searchFocused = true"
+                     @blur="setTimeout(() => searchFocused = false, 200)">
+              <div class="search-suggestions" x-show="searchFocused && searchQuery">
+                <div class="suggestion-item">Search in users...</div>
+                <div class="suggestion-item">Search in settings...</div>
+              </div>
+            </div>
+          </div> -->
 
-      <!-- Right: Set Roles + Logout -->
-      <div class="d-flex align-items-center gap-2">
-        <button
-          class="btn btn-outline-primary btn-sm"
-          hx-get="./partials/set-roles.html"
-          hx-target="#main-content"
-          hx-swap="innerHTML"
-        >
-          <i class="bi bi-people-fill me-1"></i> Set Roles
-        </button>
+          <!-- Notifications -->
+          <!-- <div class="nav-item-wrapper" x-data="notificationDropdown()">
+            <button class="nav-icon-btn notification-btn"
+                    @click="toggleNotifications"
+                    :class="{'has-notifications': unreadCount > 0}">
+              <i class="bi bi-bell"></i>
+              <span class="notification-badge" x-show="unreadCount > 0" x-text="unreadCount"></span>
+            </button>
 
-        <button
-          class="btn btn-outline-danger btn-sm fw-semibold"
-          @click="logout"
-        >
-          <i class="bi bi-box-arrow-right me-1"></i> Logout
-        </button>
+            <div class="dropdown-panel notifications-dropdown" x-show="isOpen" x-transition>
+              <div class="dropdown-header">
+                <h6>Notifications</h6>
+                <button class="mark-all-read" @click="markAllRead">Mark all read</button>
+              </div>
+              <div class="notifications-list">
+                <template x-for="notification in notifications" :key="notification.id">
+                  <div class="notification-item" :class="{'unread': !notification.read}">
+                    <div class="notification-icon">
+                      <i :class="notification.icon"></i>
+                    </div>
+                    <div class="notification-content">
+                      <p x-text="notification.title"></p>
+                      <small x-text="notification.time"></small>
+                    </div>
+                  </div>
+                </template>
+              </div>
+            </div>
+          </div> -->
+
+          <!-- User Profile Dropdown -->
+          <div class="nav-item-wrapper" x-data="userDropdown()">
+            <button class="user-profile-btn" @click="toggleProfile">
+              <img src="./assets/img/users.png" alt="User Avatar" class="user-avatar">
+              <div class="user-info-text">
+                <div class="user-name" x-text="username"></div>
+                <div class="user-role" x-text="userRole"></div>
+              </div>
+              <i class="bi bi-chevron-down dropdown-arrow"></i>
+            </button>
+
+            <div class="dropdown-panel profile-dropdown" x-show="isOpen" x-transition>
+              <div class="profile-header">
+                <img src="./assets/img/users.png" alt="User Avatar" class="profile-avatar">
+                <div>
+                  <h6 x-text="username"></h6>
+                  <p x-text="userEmail"></p>
+                </div>
+              </div>
+              <div class="dropdown-divider"></div>
+              <!-- <a href="#" class="dropdown-item">
+                <i class="bi bi-person"></i> My Profile
+              </a>
+              <a href="#" class="dropdown-item">
+                <i class="bi bi-gear"></i> Account Settings
+              </a> -->
+              <button class="dropdown-item"
+                      hx-get="./partials/set-roles.html"
+                      hx-target="#main-content"
+                      hx-swap="innerHTML">
+                <i class="bi bi-people-fill"></i> Set Roles
+              </button>
+              <button class="dropdown-item"
+                      hx-get="./partials/sembako.html"
+                      hx-target="#main-content"
+                      hx-swap="innerHTML">  
+                <i class="bi bi-people-fill"></i> Sembako
+              </button>
+              <div class="dropdown-divider"></div>
+              <button class="dropdown-item logout-item" @click="logout">
+                <i class="bi bi-box-arrow-right"></i> Logout
+              </button>
+            </div>
+          </div>
+
+          <!-- Mobile Menu Toggle -->
+          <button class="mobile-menu-toggle" @click="mobileMenuOpen = !mobileMenuOpen">
+            <span></span>
+            <span></span>
+            <span></span>
+          </button>
+        </div>
+      </nav>
+
+      <!-- Quick Actions Bar -->
+      <div class="quick-actions-bar" x-show="!mobileMenuOpen">
+        <div class="quick-actions-left">
+          <h2 class="page-title" x-text="currentPageTitle"></h2>
+          <nav class="breadcrumb">
+            <span class="breadcrumb-item">Home</span>
+            <span class="breadcrumb-separator">/</span>
+            <span class="breadcrumb-item active" x-text="currentPageTitle"></span>
+          </nav>
+        </div>
+        <div class="quick-actions-right">
+          <button class="quick-action-btn" @click="refreshCurrentPage">
+            <i class="bi bi-arrow-clockwise"></i> Refresh
+          </button>
+        </div>
       </div>
     </header>
 
