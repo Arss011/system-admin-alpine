@@ -364,6 +364,7 @@ function navigationHeader() {
       }
     },
 
+    
     refreshCurrentPage() {
       const mainContent = document.getElementById('main-content');
       const currentPage = this.currentActivePage || 'dashboard';
@@ -1309,4 +1310,11 @@ document.addEventListener("DOMContentLoaded", () => {
       Alpine.initTree(e.detail.target);
     }
   }
+
+  // Store Alpine instances globally for onclick access
+  setTimeout(() => {
+    window.portalAppInstance = Alpine.data('portalApp');
+    window.navigationHeaderInstance = Alpine.data('navigationHeader');
+    console.log('✅ Alpine instances stored globally');
+  }, 1000);
 });
