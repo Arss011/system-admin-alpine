@@ -294,6 +294,9 @@ function navigationHeader() {
       // Set page title based on active nav
       this.updatePageTitle('dashboard');
 
+      // Restore state from URL if available
+      this.restoreFromURLState();
+
       // Close mobile menu when clicking outside
       document.addEventListener('click', (e) => {
         if (!this.$el.contains(e.target)) {
@@ -307,6 +310,16 @@ function navigationHeader() {
           this.mobileMenuOpen = false;
         }
       });
+
+      // Handle browser back/forward buttons
+      window.addEventListener('popstate', (e) => {
+        if (e.state && e.state.page) {
+          this.currentActivePage = e.state.page;
+          this.updatePageTitle(e.state.page);
+          this.loadPageContent(e.state.page);
+          this.setActiveNav({ currentTarget: document.querySelector(`[data-page="${e.state.page}"]`) }, e.state.page);
+        }
+      });
     },
 
     setActiveNav(event, page) {
@@ -315,8 +328,24 @@ function navigationHeader() {
         item.classList.remove('active');
       });
 
-      // Add active class to clicked item
-      event.currentTarget.classList.add('active');
+      // Handle special case for Sembako (incentive submenu)
+      if (page === 'sembako') {
+        // Find and activate the incentive dropdown parent
+        const incentiveDropdown = document.getElementById('incentiveDropdown').closest('.nav-item');
+        if (incentiveDropdown) {
+          incentiveDropdown.classList.add('active');
+        }
+
+        // Also add active to the clicked element if it's a nav item
+        if (event.currentTarget && event.currentTarget.classList.contains('nav-item')) {
+          event.currentTarget.classList.add('active');
+        }
+      } else {
+        // Add active class to clicked item for normal navigation
+        if (event.currentTarget) {
+          event.currentTarget.classList.add('active');
+        }
+      }
 
       // Track current page for refresh functionality
       this.currentActivePage = page;
@@ -324,10 +353,13 @@ function navigationHeader() {
       // Update page title
       this.updatePageTitle(page);
 
+      // Store in URL for persistence
+      this.updateURLState(page);
+
       // Close mobile menu if open
       this.mobileMenuOpen = false;
 
-      // Load corresponding content (you can expand this)
+      // Load corresponding content
       this.loadPageContent(page);
     },
 
@@ -341,6 +373,13 @@ function navigationHeader() {
         sembako: 'Sembako Management'
       };
       this.currentPageTitle = titles[page] || 'Dashboard';
+    },
+
+    updateURLState(page) {
+      // Update URL without full page reload
+      const url = new URL(window.location);
+      url.searchParams.set('page', page);
+      window.history.pushState({ page }, '', url);
     },
 
     loadPageContent(page) {
@@ -364,6 +403,38 @@ function navigationHeader() {
       }
     },
 
+    restoreFromURLState() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const savedPage = urlParams.get('page');
+
+      if (savedPage) {
+        console.log('🔄 Restoring page from URL:', savedPage);
+
+        // Simulate navigation event for the saved page
+        setTimeout(() => {
+          this.currentActivePage = savedPage;
+          this.updatePageTitle(savedPage);
+          this.loadPageContent(savedPage);
+
+          // Set active indicator
+          if (savedPage === 'sembako') {
+            const incentiveDropdown = document.getElementById('incentiveDropdown').closest('.nav-item');
+            if (incentiveDropdown) {
+              incentiveDropdown.classList.add('active');
+            }
+          } else {
+            // Find the nav item for this page and activate it
+            document.querySelectorAll('.nav-item').forEach(item => {
+              const href = item.getAttribute('href') || item.getAttribute('hx-get');
+              if (href && href.includes(savedPage)) {
+                item.classList.add('active');
+              }
+            });
+          }
+        }, 500);
+      }
+    },
+
     
     refreshCurrentPage() {
       const mainContent = document.getElementById('main-content');
@@ -384,6 +455,16 @@ function navigationHeader() {
       // Reload the current page content after a short delay
       setTimeout(() => {
         this.loadPageContent(currentPage);
+
+        // Restore active indicator after content loads
+        setTimeout(() => {
+          if (currentPage === 'sembako') {
+            const incentiveDropdown = document.getElementById('incentiveDropdown').closest('.nav-item');
+            if (incentiveDropdown) {
+              incentiveDropdown.classList.add('active');
+            }
+          }
+        }, 100);
       }, 500);
     }
   };
