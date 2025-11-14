@@ -201,6 +201,25 @@ class SembakoManager extends BaseComponent {
       this.refreshConfigs();
       this.showNotification('success', 'Incentive config deleted successfully');
     });
+
+    // Employee incentive events
+    this.on(EventTypes.INCENTIVE_EMPLOYEE_CREATED, (data) => {
+      console.log('📝 SembakoManager: Employee incentive created event received', data);
+      this.refreshEmployees();
+      this.showNotification('success', 'Incentive assigned to employee successfully');
+    });
+
+    this.on(EventTypes.INCENTIVE_EMPLOYEE_UPDATED, (data) => {
+      console.log('📝 SembakoManager: Employee incentive updated event received', data);
+      this.refreshEmployees();
+      this.showNotification('success', 'Employee incentive updated successfully');
+    });
+
+    this.on(EventTypes.INCENTIVE_EMPLOYEE_DELETED, (data) => {
+      console.log('📝 SembakoManager: Employee incentive deleted event received', data);
+      this.refreshEmployees();
+      this.showNotification('success', 'Employee incentive deleted successfully');
+    });
   }
 
   /**
@@ -437,7 +456,17 @@ class SembakoManager extends BaseComponent {
         <div class="card">
           <div class="card-header d-flex justify-content-between align-items-center">
             <h5 class="mb-0">Employee Incentives</h5>
-            <span class="badge bg-info">${totalCount} Total</span>
+            <div class="d-flex align-items-center gap-3">
+              <div class="input-group input-group-sm" style="width: 200px;">
+                <input type="number" class="form-control" placeholder="Employee ID" id="searchEmployeeId">
+                <button class="btn btn-outline-secondary" type="button" id="searchEmployeeBtn">
+                  <i class="bi bi-search"></i>
+                </button>
+              </div>
+              <button type="button" class="btn btn-primary btn-sm add-employee-btn">
+                <i class="bi bi-plus-circle me-2"></i>Assign Incentive
+              </button>
+            </div>
           </div>
           <div class="card-body">
             <div class="table-responsive">
@@ -445,6 +474,7 @@ class SembakoManager extends BaseComponent {
                 <thead class="table-dark">
                   <tr>
                     <th>Employee ID</th>
+                    <th>Full Name</th>
                     <th>Email</th>
                     <th>Type</th>
                     <th>Status</th>
@@ -457,6 +487,9 @@ class SembakoManager extends BaseComponent {
               </table>
             </div>
             ${totalCount === 0 ? '<p class="text-center text-muted">No employee incentives found</p>' : ''}
+
+            <!-- Pagination -->
+            ${this.renderPagination()}
           </div>
         </div>
       </div>
@@ -464,6 +497,9 @@ class SembakoManager extends BaseComponent {
 
     // Bind table actions
     this.bindTableActions();
+
+    // Bind search and add buttons
+    this.bindEmployeeActions();
   }
 
   /**
@@ -475,16 +511,19 @@ class SembakoManager extends BaseComponent {
     const employees = this.data.employees;
 
     if (employees.length === 0) {
-      return '<tr><td colspan="5" class="text-center text-muted">No data available</td></tr>';
+      return '<tr><td colspan="6" class="text-center text-muted">No data available</td></tr>';
     }
 
-    return employees.slice(0, 20).map(employee => {
+    return employees.map(employee => {
       const type = this.data.types.find(t => t.pk === employee.incentive_type_id);
       return `
         <tr data-employee-id="${employee.pk}">
           <td>${employee.employee_id || '-'}</td>
+          <td>${employee.fullname || '-'}</td>
           <td>${employee.email || '-'}</td>
-          <td>${type ? type.name : 'Unknown'}</td>
+          <td>
+            <span class="badge bg-secondary">${type ? type.name : 'Unknown'}</span>
+          </td>
           <td>
             <span class="badge ${employee.is_active ? 'bg-success' : 'bg-danger'}">
               ${employee.is_active ? 'Active' : 'Inactive'}
@@ -495,11 +534,94 @@ class SembakoManager extends BaseComponent {
               <button type="button" class="btn btn-outline-primary view-employee-btn" data-id="${employee.pk}">
                 <i class="bi bi-eye"></i>
               </button>
+              <button type="button" class="btn btn-outline-warning edit-employee-btn" data-id="${employee.pk}">
+                <i class="bi bi-pencil"></i>
+              </button>
+              <button type="button" class="btn btn-outline-danger delete-employee-btn" data-id="${employee.pk}">
+                <i class="bi bi-trash"></i>
+              </button>
             </div>
           </td>
         </tr>
       `;
     }).join('');
+  }
+
+  /**
+   * Render pagination controls
+   * @private
+   * @returns {string} HTML for pagination
+   */
+  renderPagination() {
+    const pagination = this.data.employeesPagination;
+    if (!pagination || pagination.total <= pagination.limit) {
+      return '';
+    }
+
+    const totalPages = Math.ceil(pagination.total / pagination.limit);
+    const currentPage = Math.floor(pagination.offset / pagination.limit) + 1;
+
+    return `
+      <nav aria-label="Employee pagination" class="mt-3">
+        <ul class="pagination justify-content-center">
+          <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+            <button class="page-link" data-page="${currentPage - 1}" data-action="prev">Previous</button>
+          </li>
+          ${Array.from({ length: totalPages }, (_, i) => i + 1).map(page => `
+            <li class="page-item ${page === currentPage ? 'active' : ''}">
+              <button class="page-link" data-page="${page}">${page}</button>
+            </li>
+          `).join('')}
+          <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+            <button class="page-link" data-page="${currentPage + 1}" data-action="next">Next</button>
+          </li>
+        </ul>
+        <div class="text-center mt-2">
+          <small class="text-muted">Showing ${pagination.offset + 1}-${Math.min(pagination.offset + pagination.limit, pagination.total)} of ${pagination.total} employees</small>
+        </div>
+      </nav>
+    `;
+  }
+
+  /**
+   * Bind employee-specific actions
+   * @private
+   */
+  bindEmployeeActions() {
+    // Search by employee ID
+    const searchBtn = this.find('#searchEmployeeBtn');
+    const searchInput = this.find('#searchEmployeeId');
+
+    if (searchBtn && searchInput) {
+      this.addEventListener(searchBtn, 'click', () => {
+        this.searchEmployeeById();
+      });
+
+      this.addEventListener(searchInput, 'keypress', (e) => {
+        if (e.key === 'Enter') {
+          this.searchEmployeeById();
+        }
+      });
+    }
+
+    // Add employee incentive button
+    const addBtn = this.find('.add-employee-btn');
+    if (addBtn) {
+      this.addEventListener(addBtn, 'click', () => {
+        this.showAssignIncentiveModal();
+      });
+    }
+
+    // Pagination buttons
+    this.querySelectorAll('.pagination button').forEach(btn => {
+      this.addEventListener(btn, 'click', (e) => {
+        e.preventDefault();
+        const page = parseInt(e.target.dataset.page);
+        if (page && !isNaN(page)) {
+          this.loadEmployeesPage(page);
+        }
+      });
+    });
   }
 
   /**
@@ -547,6 +669,22 @@ class SembakoManager extends BaseComponent {
         e.preventDefault();
         const employeeId = parseInt(e.currentTarget.dataset.id);
         this.viewEmployee(employeeId);
+      });
+    });
+
+    this.querySelectorAll('.edit-employee-btn').forEach(btn => {
+      this.addEventListener(btn, 'click', (e) => {
+        e.preventDefault();
+        const employeeId = parseInt(e.currentTarget.dataset.id);
+        this.editEmployee(employeeId);
+      });
+    });
+
+    this.querySelectorAll('.delete-employee-btn').forEach(btn => {
+      this.addEventListener(btn, 'click', (e) => {
+        e.preventDefault();
+        const employeeId = parseInt(e.currentTarget.dataset.id);
+        this.deleteEmployee(employeeId);
       });
     });
   }
@@ -1011,11 +1149,383 @@ class SembakoManager extends BaseComponent {
     console.log(`👁️ SembakoManager: Viewing employee ${employeeId}`);
 
     try {
-      // For now, show a simple info message
-      this.showNotification('info', `Employee #${employeeId} details view coming soon!`);
+      const employee = await this.incentiveService.getEmployeeIncentiveById(employeeId);
+      const type = this.data.types.find(t => t.pk === employee.incentive_type_id);
+
+      const modalHtml = `
+        <div class="modal fade" id="viewEmployeeModal" tabindex="-1">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">Employee Incentive Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+              </div>
+              <div class="modal-body">
+                <div class="row mb-3">
+                  <div class="col-sm-4"><strong>Employee ID:</strong></div>
+                  <div class="col-sm-8">${employee.employee_id || '-'}</div>
+                </div>
+                <div class="row mb-3">
+                  <div class="col-sm-4"><strong>Full Name:</strong></div>
+                  <div class="col-sm-8">${employee.fullname || '-'}</div>
+                </div>
+                <div class="row mb-3">
+                  <div class="col-sm-4"><strong>Email:</strong></div>
+                  <div class="col-sm-8">${employee.email || '-'}</div>
+                </div>
+                <div class="row mb-3">
+                  <div class="col-sm-4"><strong>Incentive Type:</strong></div>
+                  <div class="col-sm-8">${type ? type.name : 'Unknown'}</div>
+                </div>
+                <div class="row mb-3">
+                  <div class="col-sm-4"><strong>Created:</strong></div>
+                  <div class="col-sm-8">${employee.created_at ? new Date(employee.created_at).toLocaleString() : '-'}</div>
+                </div>
+                <div class="row mb-3">
+                  <div class="col-sm-4"><strong>Notes:</strong></div>
+                  <div class="col-sm-8">${employee.notes || '-'}</div>
+                </div>
+                <div class="row mb-3">
+                  <div class="col-sm-4"><strong>Status:</strong></div>
+                  <div class="col-sm-8">
+                    <span class="badge ${employee.is_active ? 'bg-success' : 'bg-danger'}">
+                      ${employee.is_active ? 'Active' : 'Inactive'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      await this.showModal('viewEmployeeModal', { content: modalHtml });
     } catch (error) {
       console.error(`❌ SembakoManager: Error viewing employee ${employeeId}`, error);
       this.showNotification('error', 'Failed to view employee: ' + error.message);
+    }
+  }
+
+  /**
+   * Edit employee incentive
+   * @param {number} employeeId - Employee ID
+   */
+  async editEmployee(employeeId) {
+    console.log(`✏️ SembakoManager: Editing employee ${employeeId}`);
+
+    try {
+      const employee = await this.incentiveService.getEmployeeIncentiveById(employeeId);
+
+      const typeOptions = this.data.types.map(type =>
+        `<option value="${type.pk}" ${type.pk === employee.incentive_type_id ? 'selected' : ''}>${type.name} (${type.code})</option>`
+      ).join('');
+
+      const modalHtml = `
+        <div class="modal fade" id="editEmployeeModal" tabindex="-1" data-bs-backdrop="static">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">Edit Employee Incentive</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+              </div>
+              <div class="modal-body">
+                <form id="editEmployeeForm">
+                  <input type="hidden" name="pk" value="${employee.pk}">
+                  <div class="mb-3">
+                    <label for="editEmployeeId" class="form-label">Employee ID</label>
+                    <input type="number" class="form-control" id="editEmployeeId" name="employee_id" value="${employee.employee_id || ''}" required>
+                  </div>
+                  <div class="mb-3">
+                    <label for="editEmployeeEmail" class="form-label">Email *</label>
+                    <input type="email" class="form-control" id="editEmployeeEmail" name="email" value="${employee.email || ''}" required>
+                  </div>
+                  <div class="mb-3">
+                    <label for="editEmployeeFullname" class="form-label">Full Name</label>
+                    <input type="text" class="form-control" id="editEmployeeFullname" name="fullname" value="${employee.fullname || ''}">
+                  </div>
+                  <div class="mb-3">
+                    <label for="editEmployeeType" class="form-label">Incentive Type *</label>
+                    <select class="form-select" id="editEmployeeType" name="incentive_type_id" required>
+                      <option value="">Select type...</option>
+                      ${typeOptions}
+                    </select>
+                  </div>
+                  <div class="mb-3">
+                    <label for="editEmployeeNotes" class="form-label">Notes</label>
+                    <textarea class="form-control" id="editEmployeeNotes" name="notes" rows="3">${employee.notes || ''}</textarea>
+                  </div>
+                  <div class="mb-3">
+                    <div class="form-check">
+                      <input class="form-check-input" type="checkbox" id="editEmployeeActive" name="is_active" ${employee.is_active ? 'checked' : ''}>
+                      <label class="form-check-label" for="editEmployeeActive">
+                        Active
+                      </label>
+                    </div>
+                  </div>
+                </form>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="updateEmployeeBtn">Update</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      await this.showModal('editEmployeeModal', { content: modalHtml });
+
+      // Bind form submission
+      const updateBtn = document.getElementById('updateEmployeeBtn');
+      const form = document.getElementById('editEmployeeForm');
+
+      this.addEventListener(updateBtn, 'click', async () => {
+        if (form.checkValidity()) {
+          const formData = new FormData(form);
+          const employeeData = {
+            employee_id: parseInt(formData.get('employee_id')),
+            email: formData.get('email'),
+            fullname: formData.get('fullname'),
+            incentive_type_id: parseInt(formData.get('incentive_type_id')),
+            notes: formData.get('notes'),
+            is_active: formData.has('is_active')
+          };
+
+          await this.updateEmployee(employeeId, employeeData);
+          await this.hideModal('editEmployeeModal');
+        } else {
+          form.reportValidity();
+        }
+      });
+
+    } catch (error) {
+      console.error(`❌ SembakoManager: Error editing employee ${employeeId}`, error);
+      this.showNotification('error', 'Failed to edit employee: ' + error.message);
+    }
+  }
+
+  /**
+   * Delete employee incentive
+   * @param {number} employeeId - Employee ID
+   */
+  async deleteEmployee(employeeId) {
+    console.log(`🗑️ SembakoManager: Deleting employee ${employeeId}`);
+
+    try {
+      const confirmed = await this.showNotification('confirm',
+        'Are you sure you want to delete this employee incentive?',
+        { title: 'Confirm Delete' }
+      );
+
+      if (confirmed) {
+        await this.incentiveService.deleteEmployeeIncentive(employeeId);
+      }
+    } catch (error) {
+      console.error(`❌ SembakoManager: Error deleting employee ${employeeId}`, error);
+      this.showNotification('error', 'Failed to delete employee: ' + error.message);
+    }
+  }
+
+  /**
+   * Show assign incentive modal
+   */
+  async showAssignIncentiveModal() {
+    console.log('➕ SembakoManager: Showing assign incentive modal');
+
+    if (this.data.types.length === 0) {
+      this.showNotification('warning', 'Please create at least one incentive type first');
+      return;
+    }
+
+    try {
+      const typeOptions = this.data.types.map(type =>
+        `<option value="${type.pk}">${type.name} (${type.code})</option>`
+      ).join('');
+
+      const modalHtml = `
+        <div class="modal fade" id="assignIncentiveModal" tabindex="-1" data-bs-backdrop="static">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">Assign Incentive to Employee</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+              </div>
+              <div class="modal-body">
+                <form id="assignIncentiveForm">
+                  <div class="mb-3">
+                    <label for="assignEmployeeId" class="form-label">Employee ID *</label>
+                    <input type="number" class="form-control" id="assignEmployeeId" name="employee_id" required>
+                  </div>
+                  <div class="mb-3">
+                    <label for="assignEmployeeEmail" class="form-label">Email *</label>
+                    <input type="email" class="form-control" id="assignEmployeeEmail" name="email" required>
+                  </div>
+                  <div class="mb-3">
+                    <label for="assignEmployeeFullname" class="form-label">Full Name</label>
+                    <input type="text" class="form-control" id="assignEmployeeFullname" name="fullname">
+                  </div>
+                  <div class="mb-3">
+                    <label for="assignEmployeeType" class="form-label">Incentive Type *</label>
+                    <select class="form-select" id="assignEmployeeType" name="incentive_type_id" required>
+                      <option value="">Select type...</option>
+                      ${typeOptions}
+                    </select>
+                  </div>
+                  <div class="mb-3">
+                    <label for="assignEmployeePeriod" class="form-label">Period (YYYY-MM) *</label>
+                    <input type="month" class="form-control" id="assignEmployeePeriod" name="periode" required>
+                  </div>
+                  <div class="mb-3">
+                    <label for="assignEmployeeNotes" class="form-label">Notes</label>
+                    <textarea class="form-control" id="assignEmployeeNotes" name="notes" rows="3"></textarea>
+                  </div>
+                  <div class="mb-3">
+                    <label for="assignEmployeeDesc" class="form-label">Description</label>
+                    <textarea class="form-control" id="assignEmployeeDesc" name="descriptions" rows="3"></textarea>
+                  </div>
+                  <div class="mb-3">
+                    <div class="form-check">
+                      <input class="form-check-input" type="checkbox" id="assignEmployeeActive" name="is_active" checked>
+                      <label class="form-check-label" for="assignEmployeeActive">
+                        Active
+                      </label>
+                    </div>
+                  </div>
+                </form>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="assignIncentiveBtn">Assign</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      await this.showModal('assignIncentiveModal', { content: modalHtml });
+
+      // Bind form submission
+      const assignBtn = document.getElementById('assignIncentiveBtn');
+      const form = document.getElementById('assignIncentiveForm');
+
+      this.addEventListener(assignBtn, 'click', async () => {
+        if (form.checkValidity()) {
+          const formData = new FormData(form);
+          const employeeData = {
+            employee_id: parseInt(formData.get('employee_id')),
+            email: formData.get('email'),
+            fullname: formData.get('fullname'),
+            incentive_type_id: parseInt(formData.get('incentive_type_id')),
+            periode: formData.get('periode'),
+            notes: formData.get('notes'),
+            descriptions: formData.get('descriptions'),
+            is_active: formData.has('is_active')
+          };
+
+          await this.assignIncentive(employeeData);
+          await this.hideModal('assignIncentiveModal');
+        } else {
+          form.reportValidity();
+        }
+      });
+
+    } catch (error) {
+      console.error('❌ SembakoManager: Error showing assign incentive modal', error);
+      this.showNotification('error', 'Failed to open assign incentive modal: ' + error.message);
+    }
+  }
+
+  /**
+   * Search employee by ID
+   */
+  async searchEmployeeById() {
+    const searchInput = this.find('#searchEmployeeId');
+    const employeeId = searchInput ? parseInt(searchInput.value) : null;
+
+    if (!employeeId || isNaN(employeeId)) {
+      this.showNotification('warning', 'Please enter a valid employee ID');
+      return;
+    }
+
+    try {
+      console.log(`🔍 SembakoManager: Searching for employee ${employeeId}`);
+      const response = await this.incentiveService.getEmployeeIncentivesByEmployeeId(employeeId);
+
+      if (response.data && response.data.length > 0) {
+        this.data.employees = response.data;
+        this.data.employeesPagination = null; // Clear pagination for search results
+        this.renderCurrentView();
+        this.showNotification('success', `Found ${response.data.length} incentive(s) for employee ${employeeId}`);
+      } else {
+        this.showNotification('info', `No incentives found for employee ${employeeId}`);
+      }
+    } catch (error) {
+      console.error(`❌ SembakoManager: Error searching employee ${employeeId}`, error);
+      this.showNotification('error', 'Failed to search employee: ' + error.message);
+    }
+  }
+
+  /**
+   * Load employees page
+   * @param {number} page - Page number
+   */
+  async loadEmployeesPage(page) {
+    const limit = 20;
+    const offset = (page - 1) * limit;
+
+    try {
+      console.log(`📄 SembakoManager: Loading employee page ${page}`);
+      const response = await this.incentiveService.getEmployeeIncentives({
+        limit,
+        offset
+      });
+
+      this.data.employees = response.data || [];
+      this.data.employeesPagination = {
+        limit,
+        offset,
+        total: response.total || 0,
+        currentPage: page
+      };
+
+      this.renderCurrentView();
+    } catch (error) {
+      console.error(`❌ SembakoManager: Error loading employee page ${page}`, error);
+      this.showNotification('error', 'Failed to load employee page: ' + error.message);
+    }
+  }
+
+  /**
+   * Update employee incentive
+   * @private
+   * @param {number} employeeId - Employee ID
+   * @param {Object} employeeData - Updated employee data
+   */
+  async updateEmployee(employeeId, employeeData) {
+    try {
+      console.log(`💾 SembakoManager: Updating employee ${employeeId}`, employeeData);
+      await this.incentiveService.updateEmployeeIncentive(employeeId, employeeData);
+    } catch (error) {
+      console.error(`❌ SembakoManager: Error updating employee ${employeeId}`, error);
+      this.showNotification('error', 'Failed to update employee: ' + error.message);
+    }
+  }
+
+  /**
+   * Assign incentive to employee
+   * @private
+   * @param {Object} employeeData - Employee incentive data
+   */
+  async assignIncentive(employeeData) {
+    try {
+      console.log('💾 SembakoManager: Assigning incentive to employee', employeeData);
+      await this.incentiveService.assignIncentiveToEmployee(employeeData);
+    } catch (error) {
+      console.error('❌ SembakoManager: Error assigning incentive', error);
+      this.showNotification('error', 'Failed to assign incentive: ' + error.message);
     }
   }
 

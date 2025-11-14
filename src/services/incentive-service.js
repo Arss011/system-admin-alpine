@@ -299,8 +299,8 @@ class IncentiveService {
 
   /**
    * Get all employee incentives
-   * @param {Object} filters - Optional filters
-   * @returns {Promise<Object>} Employee incentives data
+   * @param {Object} filters - Optional filters (limit, offset, etc.)
+   * @returns {Promise<Object>} Employee incentives data with pagination
    */
   async getEmployeeIncentives(filters = {}) {
     console.log('📋 IncentiveService: Fetching employee incentives with filters:', filters);
@@ -315,13 +315,156 @@ class IncentiveService {
         data: response.data || response
       });
 
-      return response.data || response;
+      return response; // Return full response including pagination info
     } catch (error) {
       console.error('❌ IncentiveService: Error fetching employee incentives:', error);
       this.eventBus.emit(EventTypes.DATA_ERROR, {
         type: 'employees',
         error: error.message
       });
+      throw error;
+    }
+  }
+
+  /**
+   * Get employee incentives by employee ID
+   * @param {number} employeeId - Employee ID
+   * @returns {Promise<Object>} Employee incentives data
+   */
+  async getEmployeeIncentivesByEmployeeId(employeeId) {
+    console.log(`📋 IncentiveService: Fetching incentives for employee ${employeeId}`);
+
+    try {
+      const response = await this.apiClient.get(`${this.baseEndpoint}/employee-incentives/${employeeId}`);
+
+      console.log(`✅ IncentiveService: Employee ${employeeId} incentives loaded:`, response.data?.length || 0, 'items');
+      return response;
+    } catch (error) {
+      console.error(`❌ IncentiveService: Error fetching incentives for employee ${employeeId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get employee incentive summary by employee and period
+   * @param {number} employeeId - Employee ID
+   * @param {string} period - Period (YYYY-MM format)
+   * @returns {Promise<Object>} Employee incentive summary
+   */
+  async getEmployeeIncentiveSummary(employeeId, period) {
+    console.log(`📋 IncentiveService: Fetching incentive summary for employee ${employeeId}, period ${period}`);
+
+    try {
+      const response = await this.apiClient.get(`${this.baseEndpoint}/employee-incentives/summary/${employeeId}/${period}`);
+
+      console.log(`✅ IncentiveService: Employee ${employeeId} summary loaded for period ${period}`);
+      return response.data || response;
+    } catch (error) {
+      console.error(`❌ IncentiveService: Error fetching incentive summary for employee ${employeeId}, period ${period}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Assign incentive to employee
+   * @param {Object} employeeIncentiveData - Employee incentive data
+   * @param {number} employeeIncentiveData.employee_id - Employee ID
+   * @param {string} employeeIncentiveData.email - Employee email
+   * @param {string} employeeIncentiveData.fullname - Employee full name
+   * @param {number} employeeIncentiveData.incentive_type_id - Incentive type ID
+   * @param {string} employeeIncentiveData.notes - Optional notes
+   * @param {string} employeeIncentiveData.descriptions - Optional descriptions
+   * @param {string} employeeIncentiveData.periode - Period (YYYY-MM format)
+   * @returns {Promise<Object>} Created employee incentive data
+   */
+  async assignIncentiveToEmployee(employeeIncentiveData) {
+    console.log('➕ IncentiveService: Assigning incentive to employee:', employeeIncentiveData);
+
+    // Validate required fields
+    this._validateEmployeeIncentiveData(employeeIncentiveData, true);
+
+    try {
+      const response = await this.apiClient.post(`${this.baseEndpoint}/employee-incentives`, employeeIncentiveData);
+
+      this.eventBus.emit(EventTypes.INCENTIVE_EMPLOYEE_CREATED, {
+        employeeIncentive: response.data,
+        action: 'assign'
+      });
+
+      console.log('✅ IncentiveService: Incentive assigned to employee successfully:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('❌ IncentiveService: Error assigning incentive to employee:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update employee incentive
+   * @param {number} id - Employee incentive ID
+   * @param {Object} employeeIncentiveData - Updated employee incentive data
+   * @returns {Promise<Object>} Updated employee incentive data
+   */
+  async updateEmployeeIncentive(id, employeeIncentiveData) {
+    console.log(`📝 IncentiveService: Updating employee incentive ${id}:`, employeeIncentiveData);
+
+    // Validate required fields
+    this._validateEmployeeIncentiveData(employeeIncentiveData, false);
+
+    try {
+      const response = await this.apiClient.put(`${this.baseEndpoint}/employee-incentives/${id}`, employeeIncentiveData);
+
+      this.eventBus.emit(EventTypes.INCENTIVE_EMPLOYEE_UPDATED, {
+        id,
+        employeeIncentive: response.data,
+        action: 'update'
+      });
+
+      console.log('✅ IncentiveService: Employee incentive updated successfully:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error(`❌ IncentiveService: Error updating employee incentive ${id}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete employee incentive
+   * @param {number} id - Employee incentive ID
+   * @returns {Promise<Object>} Deletion response
+   */
+  async deleteEmployeeIncentive(id) {
+    console.log(`🗑️ IncentiveService: Deleting employee incentive ${id}`);
+
+    try {
+      const response = await this.apiClient.delete(`${this.baseEndpoint}/employee-incentives/${id}`);
+
+      this.eventBus.emit(EventTypes.INCENTIVE_EMPLOYEE_DELETED, {
+        id,
+        action: 'delete'
+      });
+
+      console.log('✅ IncentiveService: Employee incentive deleted successfully:', response.message);
+      return response;
+    } catch (error) {
+      console.error(`❌ IncentiveService: Error deleting employee incentive ${id}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get employee incentive by ID
+   * @param {number} id - Employee incentive ID
+   * @returns {Promise<Object>} Employee incentive data
+   */
+  async getEmployeeIncentiveById(id) {
+    console.log(`🔍 IncentiveService: Fetching employee incentive ${id}`);
+
+    try {
+      const response = await this.apiClient.get(`${this.baseEndpoint}/employee-incentives/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error(`❌ IncentiveService: Error fetching employee incentive ${id}:`, error);
       throw error;
     }
   }
@@ -413,6 +556,79 @@ class IncentiveService {
     return periodRegex.test(period);
   }
 
+  /**
+   * Validate employee incentive data
+   * @private
+   * @param {Object} data - Employee incentive data to validate
+   * @param {boolean} isCreate - Whether this is for creation
+   */
+  _validateEmployeeIncentiveData(data, isCreate) {
+    const errors = [];
+
+    if (isCreate || data.employee_id !== undefined) {
+      if (!data.employee_id || typeof data.employee_id !== 'number') {
+        errors.push('Employee ID is required and must be a number');
+      }
+    }
+
+    if (isCreate || data.email !== undefined) {
+      if (!data.email || typeof data.email !== 'string' || data.email.trim().length === 0) {
+        errors.push('Email is required and must be a non-empty string');
+      } else if (data.email && !this._isValidEmail(data.email)) {
+        errors.push('Email must be a valid email format');
+      }
+    }
+
+    if (data.fullname !== undefined && data.fullname !== null) {
+      if (typeof data.fullname !== 'string') {
+        errors.push('Fullname must be a string');
+      }
+    }
+
+    if (isCreate || data.incentive_type_id !== undefined) {
+      if (!data.incentive_type_id || typeof data.incentive_type_id !== 'number') {
+        errors.push('Incentive type ID is required and must be a number');
+      }
+    }
+
+    if (isCreate || data.periode !== undefined) {
+      if (!data.periode || typeof data.periode !== 'string' || !this._isValidPeriod(data.periode)) {
+        errors.push('Period is required and must be in YYYY-MM format');
+      }
+    }
+
+    if (data.notes !== undefined && data.notes !== null) {
+      if (typeof data.notes !== 'string') {
+        errors.push('Notes must be a string');
+      }
+    }
+
+    if (data.descriptions !== undefined && data.descriptions !== null) {
+      if (typeof data.descriptions !== 'string') {
+        errors.push('Descriptions must be a string');
+      }
+    }
+
+    if (data.is_active !== undefined && typeof data.is_active !== 'boolean') {
+      errors.push('Is_active must be a boolean');
+    }
+
+    if (errors.length > 0) {
+      throw new Error(`Validation failed: ${errors.join(', ')}`);
+    }
+  }
+
+  /**
+   * Validate email format
+   * @private
+   * @param {string} email - Email to validate
+   * @returns {boolean} True if valid email format
+   */
+  _isValidEmail(email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  }
+
   // ==================== UTILITY METHODS ====================
 
   /**
@@ -427,13 +643,13 @@ class IncentiveService {
     const [types, configs, employees] = await Promise.all([
       this.getTypes(),
       this.getConfigs(),
-      this.getEmployeeIncentives()
+      this.getEmployeeIncentives({ limit: 50 }) // Add pagination for better performance
     ]);
 
     return {
       types,
       configs,
-      employees
+      employees: employees.data || employees // Handle different response formats
     };
   }
 
