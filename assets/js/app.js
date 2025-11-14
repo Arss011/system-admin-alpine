@@ -87,6 +87,10 @@ function userRolesTable() {
     total: 0,
     loading: false,
 
+    // Missing properties for the UI
+    selectedEmployee: null,
+    modalRole: { open: false },
+
     async loadData() {
       this.loading = true;
       try {
@@ -284,6 +288,7 @@ function navigationHeader() {
     searchFocused: false,
     currentPageTitle: 'Dashboard',
     userRole: 'Administrator',
+    currentActivePage: 'dashboard',
 
     initNavigation() {
       // Set page title based on active nav
@@ -313,6 +318,9 @@ function navigationHeader() {
       // Add active class to clicked item
       event.currentTarget.classList.add('active');
 
+      // Track current page for refresh functionality
+      this.currentActivePage = page;
+
       // Update page title
       this.updatePageTitle(page);
 
@@ -338,16 +346,18 @@ function navigationHeader() {
     loadPageContent(page) {
       const mainContent = document.getElementById('main-content');
 
+      console.log('📄 Loading page content for:', page);
+
       switch(page) {
         case 'dashboard':
-          htmx.ajax('GET', './partials/set-roles.html', '#main-content');
+          htmx.ajax('GET', './partials/set-roles.html', { target: '#main-content', swap: 'innerHTML' });
           break;
         case 'incentive':
           // Show incentive overview or first submenu
           this.updatePageTitle('incentive');
           break;
         case 'sembako':
-          htmx.ajax('GET', './partials/sembako.html', '#main-content');
+          htmx.ajax('GET', './partials/sembako.html', { target: '#main-content', swap: 'innerHTML' });
           break;
         default:
           console.log(`Loading ${page} content...`);
@@ -356,6 +366,9 @@ function navigationHeader() {
 
     refreshCurrentPage() {
       const mainContent = document.getElementById('main-content');
+      const currentPage = this.currentActivePage || 'dashboard';
+
+      console.log('🔄 Refreshing current page:', currentPage);
 
       // Show loading spinner
       mainContent.innerHTML = `
@@ -363,22 +376,9 @@ function navigationHeader() {
           <div class="spinner-border text-success mb-3" role="status">
             <span class="visually-hidden">Loading...</span>
           </div>
-          <p class="text-muted">Refreshing data...</p>
+          <p class="text-muted">Refreshing ${currentPage} data...</p>
         </div>
       `;
-
-      // Get current page and reload content
-      const currentActiveItem = document.querySelector('.nav-item.active');
-      let currentPage = 'dashboard';
-
-      if (currentActiveItem) {
-        const clickHandler = currentActiveItem.getAttribute('@click');
-        if (clickHandler && clickHandler.includes("'sembako'")) {
-          currentPage = 'sembako';
-        } else if (clickHandler && clickHandler.includes("'dashboard'")) {
-          currentPage = 'dashboard';
-        }
-      }
 
       // Reload the current page content after a short delay
       setTimeout(() => {
@@ -1043,6 +1043,25 @@ function employeeForm() {
 
     saveEmployee() {
       console.log('Saving employee:', this.formData);
+    }
+  };
+}
+
+function modalRoleData() {
+  return {
+    user: null,
+    isDelete: false,
+    openModal(user, isDelete = false) {
+      this.user = user;
+      this.isDelete = isDelete;
+      // Show modal logic here
+    },
+
+    deleteRole() {
+      if (this.user) {
+        console.log('Deleting role for:', this.user);
+        // Delete logic here
+      }
     }
   };
 }

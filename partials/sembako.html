@@ -396,16 +396,20 @@ async function loadSembakoData() {
 
     if (hasRealData) {
       console.log('🎉 Real data detected! Updating UI...');
-      // Update UI with real data
-      updateTypesTable(types.data || []);
-      updateConfigTable(configs.data || []);
-      updateEmployeeTable(employees.data || []);
-      updateStatsCards(types.data || [], configs.data || [], employees.data || []);
 
-      console.log('✅ Sembako data loaded successfully');
-      console.log('Types:', types.data?.length || 0);
-      console.log('Configs:', configs.data?.length || 0);
-      console.log('Employees:', employees.data?.length || 0);
+      // Small delay to ensure DOM is ready
+      setTimeout(() => {
+        // Update UI with real data
+        updateTypesTable(types.data || []);
+        updateConfigTable(configs.data || []);
+        updateEmployeeTable(employees.data || []);
+        updateStatsCards(types.data || [], configs.data || [], employees.data || []);
+
+        console.log('✅ Sembako data loaded successfully');
+        console.log('Types:', types.data?.length || 0);
+        console.log('Configs:', configs.data?.length || 0);
+        console.log('Employees:', employees.data?.length || 0);
+      }, 100);
     } else {
       console.log('⚠️ No real data found, keeping demo data');
       // Clear loading states but don't update with empty data
@@ -448,7 +452,12 @@ function clearLoadingStates() {
 
 function updateTypesTable(types) {
   const tbody = document.querySelector('#types-tab tbody');
-  if (!tbody || !types || types.length === 0) {
+  if (!tbody) {
+    console.warn('❌ Types table tbody not found in DOM');
+    return;
+  }
+
+  if (!types || types.length === 0) {
     tbody.innerHTML = '<tr><td colspan="5" class="text-center">Tidak ada data jenis sembako</td></tr>';
     return;
   }
@@ -483,7 +492,12 @@ function updateTypesTable(types) {
 
 function updateConfigTable(configs) {
   const tbody = document.querySelector('#config-tab tbody');
-  if (!tbody || !configs || configs.length === 0) {
+  if (!tbody) {
+    console.warn('❌ Config table tbody not found in DOM');
+    return;
+  }
+
+  if (!configs || configs.length === 0) {
     tbody.innerHTML = '<tr><td colspan="7" class="text-center">Tidak ada data konfigurasi</td></tr>';
     return;
   }
@@ -522,7 +536,12 @@ function updateConfigTable(configs) {
 
 function updateEmployeeTable(employees) {
   const tbody = document.querySelector('#employee-tab tbody');
-  if (!tbody || !employees || employees.length === 0) {
+  if (!tbody) {
+    console.warn('❌ Employee table tbody not found in DOM');
+    return;
+  }
+
+  if (!employees || employees.length === 0) {
     tbody.innerHTML = '<tr><td colspan="7" class="text-center">Tidak ada data karyawan</td></tr>';
     return;
   }

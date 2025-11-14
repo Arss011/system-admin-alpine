@@ -54,36 +54,33 @@
                class="nav-item active"
                @click="setActiveNav($event, 'dashboard')">
               <i class="bi bi-speedometer2"></i>
-              <span>Dashboard</span>
+              <span>Set Role</span>
             </a>
 
             <!-- Incentive Menu with Dropdown -->
-            <div class="nav-dropdown" x-data="{
-              isOpen: false,
-              toggle() {
-                this.isOpen = !this.isOpen;
-              },
-              close() {
-                this.isOpen = false;
-              }
-            }" @click.away="close()">
+            <div class="nav-dropdown" x-data="{ isOpen: false }">
               <button class="nav-item dropdown-toggle"
-                      @click="setActiveNav($event, 'incentive'); toggle()">
+                      @click="isOpen = !isOpen">
                 <i class="bi bi-gift"></i>
                 <span>Incentive</span>
                 <i class="bi bi-chevron-down dropdown-arrow-sm" :class="{'rotate': isOpen}"></i>
               </button>
 
-              <div class="dropdown-menu" x-show="isOpen" x-transition>
-                <a href="#"
-                   class="dropdown-item"
-                   @click.prevent="setActiveNav($event, 'sembako'); close()">
+              <div class="dropdown-menu"
+                   x-show="isOpen"
+                   x-transition
+                   @click.away="isOpen = false">
+                <button class="dropdown-item"
+                        hx-get="./partials/sembako.html"
+                        hx-target="#main-content"
+                        hx-swap="innerHTML"
+                        @click="isOpen = false; setActiveNav($event, 'sembako')">
                   <i class="bi bi-box-seam"></i>
                   Sembako
-                </a>
+                </button>
                 <a href="#"
                    class="dropdown-item"
-                   @click.prevent="setActiveNav($event, 'other-incentives'); close()">
+                   @click.prevent="isOpen = false">
                   <i class="bi bi-star"></i>
                   Other Incentives
                 </a>
