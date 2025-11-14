@@ -20,11 +20,54 @@
     <!-- AlpineJS Dependencies -->
     <script src="./assets/js/alpine-morph.js"></script>
 
+    <!-- Configure HTMX to execute scripts -->
+    <script>
+      document.addEventListener('htmx:configRequest', function(evt) {
+        // Add includeScripts option for all HTMX requests
+        evt.detail.parameters['includeScripts'] = 'true';
+      });
+
+      // Handle script execution after content swap
+      document.addEventListener('htmx:afterSwap', function(evt) {
+        if (evt.target.id === 'main-content') {
+          console.log('🔄 HTMX content swapped, executing scripts...');
+          // Execute any script tags in the new content
+          const scripts = evt.target.querySelectorAll('script');
+          scripts.forEach(script => {
+            if (script.src) {
+              // External script
+              const newScript = document.createElement('script');
+              newScript.src = script.src;
+              document.head.appendChild(newScript);
+            } else {
+              // Inline script
+              eval(script.textContent);
+            }
+          });
+        }
+      });
+    </script>
+
     <!-- SweetAlert2 (HARUS sebelum app.js) -->
     <script src="./assets/js/sweetalert2@11.js"></script>
 
     <!-- Runtime Environment Config -->
     <script src="./assets/js/config.js"></script>
+
+    <!-- Modular Architecture Core Services -->
+    <script src="./src/core/event-types.js"></script>
+    <script src="./src/core/event-bus.js"></script>
+    <script src="./src/core/config.js"></script>
+    <script src="./src/core/api-client.js"></script>
+    <script src="./src/core/modal-service.js"></script>
+
+    <!-- Modular Architecture Services -->
+    <script src="./src/services/notification-service.js"></script>
+    <script src="./src/services/incentive-service.js"></script>
+
+    <!-- Modular Architecture Components -->
+    <script src="./src/components/base/base-component.js"></script>
+    <script src="./src/components/sembako/sembako-manager.js"></script>
 
     <!-- App (Define Alpine components before Alpine init) -->
     <script src="./assets/js/app.js"></script>
@@ -255,6 +298,19 @@
     </main>
 
     <!-- Bootstrap 5.3 JS Bundle (with Popper) -->
+    <script>
+      // Check if Bootstrap loaded
+      window.addEventListener('load', function() {
+        console.log('🔍 Bootstrap JS check:', {
+          bootstrap: typeof bootstrap,
+          Modal: typeof bootstrap !== 'undefined' ? typeof bootstrap.Modal : 'N/A'
+        });
+      });
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <script>
+      // Immediate check after Bootstrap loads
+      console.log('🔍 Immediate Bootstrap check:', typeof bootstrap);
+    </script>
   </body>
 </html>

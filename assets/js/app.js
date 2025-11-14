@@ -1,3 +1,154 @@
+// ==================== MODULAR INITIALIZATION ====================
+
+/**
+ * Initialize the application with modular architecture
+ * This sets up all the core services and initializes the main application
+ */
+async function initializeModularApp() {
+  console.log('🚀 Initializing Modular Application...');
+
+  try {
+    // Wait for DOM to be ready
+    if (document.readyState !== 'complete') {
+      await new Promise(resolve => {
+        window.addEventListener('load', resolve);
+      });
+    }
+
+    console.log('📦 Loading modular components...');
+
+    // Load core modules (assuming they're already loaded via script tags)
+    const modules = [
+      'src/core/event-bus.js',
+      'src/core/config.js',
+      'src/core/api-client.js',
+      'src/core/modal-service.js',
+      'src/services/notification-service.js',
+      'src/services/incentive-service.js',
+      'src/components/base/base-component.js',
+      'src/components/sembako/sembako-manager.js'
+    ];
+
+    console.log('✅ All modules loaded');
+
+    // Initialize core services
+    await initializeCoreServices();
+
+    // Initialize application
+    await initializeApplication();
+
+    console.log('✅ Modular application initialized successfully');
+
+  } catch (error) {
+    console.error('❌ Failed to initialize modular application:', error);
+
+    // Fallback to legacy mode if modular initialization fails
+    console.log('🔄 Falling back to legacy mode...');
+    initializeLegacyApp();
+  }
+}
+
+/**
+ * Initialize core services
+ * @private
+ */
+async function initializeCoreServices() {
+  console.log('🔧 Initializing core services...');
+
+  // Initialize configuration service
+  window.configService = window.configService || new window.ConfigService();
+  console.log('✅ Configuration service initialized');
+
+  // Initialize event bus
+  window.eventBus = window.eventBus || new window.EventBus();
+  console.log('✅ Event bus initialized');
+
+  // Initialize API client
+  window.apiClient = window.apiClient || new window.ApiClient(window.configService);
+  console.log('✅ API client initialized');
+
+  // Initialize modal service
+  window.modalService = window.modalService || new window.ModalService(window.eventBus, window.configService);
+  console.log('✅ Modal service initialized');
+
+  // Initialize notification service
+  window.notificationService = window.notificationService || new window.NotificationService(window.eventBus, window.configService);
+  console.log('✅ Notification service initialized');
+
+  // Initialize incentive service
+  window.incentiveService = window.incentiveService || new window.IncentiveService(window.apiClient, window.eventBus, window.configService);
+  console.log('✅ Incentive service initialized');
+
+  console.log('✅ All core services initialized');
+}
+
+/**
+ * Initialize the main application
+ * @private
+ */
+async function initializeApplication() {
+  console.log('🖥️ Initializing main application...');
+
+  // Store services globally for easy access
+  window.services = {
+    config: window.configService,
+    eventBus: window.eventBus,
+    apiClient: window.apiClient,
+    modalService: window.modalService,
+    notificationService: window.notificationService,
+    incentiveService: window.incentiveService
+  };
+
+  // Initialize SembakoManager if we're on the sembako page
+  if (document.querySelector('#sembakoManager') || document.querySelector('[data-sembako-container]')) {
+    initializeSembakoManager();
+  }
+
+  console.log('✅ Main application initialized');
+}
+
+/**
+ * Initialize SembakoManager component
+ * @private
+ */
+function initializeSembakoManager() {
+  console.log('🎯 Initializing SembakoManager...');
+
+  const container = document.querySelector('#sembakoManager') || document.querySelector('[data-sembako-container]');
+
+  if (container && window.SembakoManager) {
+    try {
+      window.sembakoManagerInstance = new window.SembakoManager(container, {
+        eventBus: window.eventBus,
+        modalService: window.modalService,
+        notificationService: window.notificationService,
+        incentiveService: window.incentiveService
+      });
+
+      console.log('✅ SembakoManager initialized');
+    } catch (error) {
+      console.error('❌ Failed to initialize SembakoManager:', error);
+    }
+  }
+}
+
+/**
+ * Fallback to legacy application initialization
+ * @private
+ */
+function initializeLegacyApp() {
+  console.log('🔄 Using legacy application mode...');
+
+  // Keep existing functionality working
+  if (typeof initializeSembakoInApp === 'function') {
+    setTimeout(() => {
+      initializeSembakoInApp();
+    }, 1000);
+  }
+}
+
+// ==================== LEGACY FUNCTIONS (FOR BACKWARD COMPATIBILITY) ====================
+
 function portalApp() {
   return {
     username: "",
@@ -1379,8 +1530,16 @@ window.sembakoEmployeeForm = {
   }
 };
 
-// Re-init Alpine setelah HTMX swap konten baru
+// ==================== APPLICATION INITIALIZATION ====================
+
+// Initialize the modular application when DOM is loaded
 document.addEventListener("DOMContentLoaded", () => {
+  console.log('🚀 DOM Content Loaded - Initializing Application...');
+
+  // Initialize modular application
+  initializeModularApp();
+
+  // Re-init Alpine setelah HTMX swap konten baru
   if (document.body) {
     document.body.addEventListener("htmx:afterSwap", handleHtmxSwap);
   }
@@ -1389,6 +1548,21 @@ document.addEventListener("DOMContentLoaded", () => {
     if (e.detail.target.id === "main-content") {
       Alpine.flushAndStopDeferringMutations();
       Alpine.initTree(e.detail.target);
+
+      // Initialize sembako functionality if needed
+      if (e.detail.target.innerHTML.includes('Sembako Management')) {
+        console.log('🔄 Sembako content detected, initializing...');
+
+        // Try modular initialization first
+        if (window.SembakoManager && !window.sembakoManagerInstance) {
+          setTimeout(() => {
+            initializeSembakoManager();
+          }, 100);
+        } else {
+          // Fallback to legacy
+          initializeSembakoInApp();
+        }
+      }
     }
   }
 
@@ -1399,3 +1573,471 @@ document.addEventListener("DOMContentLoaded", () => {
     console.log('✅ Alpine instances stored globally');
   }, 1000);
 });
+
+// ==================== SEMBAKO FUNCTIONS ====================
+// Global variables to track current operations
+let currentEditType = null;
+let currentDeleteId = null;
+let currentDeleteType = null; // 'type', 'config', or 'employee'
+
+function initializeSembakoInApp() {
+  console.log('🚀 Initializing sembako functions in app.js...');
+
+  // Check Bootstrap availability
+  console.log('🔍 Bootstrap check:', {
+    bootstrap: typeof bootstrap,
+    Modal: typeof bootstrap !== 'undefined' ? typeof bootstrap.Modal : 'N/A',
+    Toast: typeof bootstrap !== 'undefined' ? typeof bootstrap.Toast : 'N/A'
+  });
+
+  // Test button functions exist
+  console.log('🔍 Function check:', {
+    openCreateTypeModal: typeof openCreateTypeModal,
+    testBootstrapModal: typeof testBootstrapModal,
+    handleEditClick: typeof handleEditClick,
+    handleDeleteClick: typeof handleDeleteClick
+  });
+
+  // Load data when content is ready
+  loadSembakoData();
+}
+
+function openCreateTypeModal() {
+  console.log('🔧 CREATE BUTTON CLICKED!');
+  alert('Create button clicked! Check console for details.');
+
+  console.log('🔧 Opening create type modal...');
+  console.log('🔍 Checking Bootstrap:', typeof bootstrap);
+  console.log('🔍 Modal element:', document.getElementById('typeModal'));
+
+  // Check if Bootstrap is loaded
+  if (typeof bootstrap === 'undefined') {
+    console.error('❌ Bootstrap is not loaded!');
+    alert('Bootstrap tidak terload. Silakan refresh halaman.');
+    return;
+  }
+
+  currentEditType = null;
+
+  // Reset form
+  document.getElementById('modalTitle').textContent = 'Tambah Jenis Sembako';
+  document.getElementById('submitButtonText').textContent = 'Simpan';
+  document.getElementById('typeForm').reset();
+  document.getElementById('typeActive').checked = true;
+
+  // Show modal
+  try {
+    const modalElement = document.getElementById('typeModal');
+    console.log('🔍 Modal element found:', modalElement);
+
+    if (!modalElement) {
+      console.error('❌ Modal element not found!');
+      alert('Modal element not found!');
+      return;
+    }
+
+    const modal = new bootstrap.Modal(modalElement);
+    console.log('🔍 Modal instance created:', modal);
+
+    modal.show();
+    console.log('✅ Modal opened successfully');
+  } catch (error) {
+    console.error('❌ Error opening modal:', error);
+    console.error('❌ Error details:', error.stack);
+    alert('Modal error: ' + error.message);
+  }
+}
+
+function editType(type) {
+  console.log('✏️ Editing type:', type);
+  currentEditType = type;
+  currentDeleteId = type.pk;
+  currentDeleteType = 'type';
+
+  // Update modal title and button
+  document.getElementById('modalTitle').textContent = 'Edit Jenis Sembako';
+  document.getElementById('submitButtonText').textContent = 'Update';
+
+  // Populate form with existing data
+  document.getElementById('typeName').value = type.name || '';
+  document.getElementById('typeCode').value = type.code || '';
+  document.getElementById('typeDescription').value = type.descriptions || '';
+  document.getElementById('typeActive').checked = type.is_active || false;
+
+  // Show modal
+  try {
+    const modal = new bootstrap.Modal(document.getElementById('typeModal'));
+    modal.show();
+    console.log('✅ Edit modal opened successfully');
+  } catch (error) {
+    console.error('❌ Error opening edit modal:', error);
+    // Fallback
+    document.getElementById('typeModal').style.display = 'block';
+    document.getElementById('typeModal').classList.add('show');
+    document.body.classList.add('modal-open');
+  }
+}
+
+function deleteType(id, typeName = 'Jenis Sembako') {
+  console.log('🗑️ Requesting delete for:', id, typeName);
+  currentDeleteId = id;
+  currentDeleteType = 'type';
+
+  // Set item name in confirmation modal
+  document.getElementById('deleteItemName').textContent = `Item: ${typeName}`;
+
+  // Show delete confirmation modal
+  try {
+    const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    modal.show();
+    console.log('✅ Delete confirmation modal opened');
+  } catch (error) {
+    console.error('❌ Error opening delete modal:', error);
+    // Fallback to simple confirmation
+    if (confirm(`Apakah Anda yakin ingin menghapus ${typeName}?`)) {
+      performDelete();
+    }
+  }
+}
+
+async function confirmDelete() {
+  console.log('🔄 Confirming delete...');
+  await performDelete();
+}
+
+async function performDelete() {
+  if (!currentDeleteId) {
+    console.error('❌ No delete ID set');
+    return;
+  }
+
+  const baseUrl = window.env?.VITE_API_URL || 'http://localhost:8000';
+  let url = '';
+
+  // Set URL based on delete type
+  switch (currentDeleteType) {
+    case 'type':
+      url = `${baseUrl}/incentive/incentive-types/${currentDeleteId}`;
+      break;
+    default:
+      console.error('❌ Unknown delete type:', currentDeleteType);
+      return;
+  }
+
+  console.log('🗑️ Deleting:', currentDeleteType, 'ID:', currentDeleteId, 'URL:', url);
+
+  try {
+    // Close delete modal
+    const deleteModal = bootstrap.Modal.getInstance(document.getElementById('deleteModal'));
+    if (deleteModal) deleteModal.hide();
+
+    const response = await fetch(url, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include'
+    });
+
+    console.log('Delete response status:', response.status);
+
+    if (response.ok) {
+      const result = await response.json();
+      console.log('Delete response:', result);
+
+      // Show success notification
+      showSuccessNotification(result.message || 'Data berhasil dihapus');
+
+      // Reload data
+      loadSembakoData();
+    } else {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+    }
+  } catch (error) {
+    console.error('❌ Error deleting:', error);
+    showErrorNotification(error.message || 'Terjadi kesalahan saat menghapus data');
+  } finally {
+    // Clear delete state
+    currentDeleteId = null;
+    currentDeleteType = null;
+  }
+}
+
+function showSuccessNotification(message) {
+  // Create Bootstrap toast notification
+  const toastHtml = `
+    <div class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+      <div class="d-flex">
+        <div class="toast-body">
+          <i class="bi bi-check-circle me-2"></i>${message}
+        </div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
+    </div>
+  `;
+
+  showToast(toastHtml);
+}
+
+function showErrorNotification(message) {
+  const toastHtml = `
+    <div class="toast align-items-center text-white bg-danger border-0" role="alert" aria-live="assertive" aria-atomic="true">
+      <div class="d-flex">
+        <div class="toast-body">
+          <i class="bi bi-exclamation-triangle me-2"></i>${message}
+        </div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
+    </div>
+  `;
+
+  showToast(toastHtml);
+}
+
+function showToast(html) {
+  // Create toast container if not exists
+  let toastContainer = document.getElementById('toastContainer');
+  if (!toastContainer) {
+    toastContainer = document.createElement('div');
+    toastContainer.id = 'toastContainer';
+    toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+    toastContainer.style.zIndex = '9999';
+    document.body.appendChild(toastContainer);
+  }
+
+  // Create and show toast
+  const toastElement = document.createElement('div');
+  toastElement.innerHTML = html;
+  toastContainer.appendChild(toastElement);
+
+  const toast = new bootstrap.Toast(toastElement.querySelector('.toast'));
+  toast.show();
+
+  // Remove toast element after hidden
+  toastElement.querySelector('.toast').addEventListener('hidden.bs.toast', () => {
+    toastElement.remove();
+  });
+}
+
+// Safe button click handlers
+function handleEditClick(button) {
+  const typeId = button.getAttribute('data-type-id');
+  const typeName = button.getAttribute('data-type-name');
+  const typeCode = button.getAttribute('data-type-code');
+  const typeDesc = button.getAttribute('data-type-desc');
+  const typeActive = button.getAttribute('data-type-active') === 'true';
+
+  console.log('📝 Edit button clicked:', { typeId, typeName, typeCode, typeDesc, typeActive });
+
+  const typeData = {
+    pk: parseInt(typeId),
+    name: typeName,
+    code: typeCode,
+    descriptions: typeDesc,
+    is_active: typeActive
+  };
+
+  editType(typeData);
+}
+
+function handleDeleteClick(button) {
+  const typeId = button.getAttribute('data-type-id');
+  const typeName = button.getAttribute('data-type-name');
+
+  console.log('🗑️ Delete button clicked:', { typeId, typeName });
+
+  deleteType(parseInt(typeId), typeName);
+}
+
+// Test function for debugging modal
+function testBootstrapModal() {
+  console.log('🧪 TEST BUTTON CLICKED!');
+
+  // Simple test first
+  alert('Test button clicked! Check console for details.');
+
+  console.log('🧪 Testing Bootstrap modal...');
+  console.log('🔍 Bootstrap availability:', typeof bootstrap);
+
+  if (typeof bootstrap === 'undefined') {
+    console.error('❌ Bootstrap not loaded!');
+    alert('Bootstrap tidak terload! Cek console untuk detail.');
+    return;
+  }
+
+  try {
+    const modalEl = document.getElementById('typeModal');
+    console.log('🔍 Modal element:', modalEl);
+
+    if (!modalEl) {
+      console.error('❌ Modal element not found!');
+      alert('Modal element not found!');
+      return;
+    }
+
+    const modal = new bootstrap.Modal(modalEl);
+    console.log('🔍 Modal instance created:', modal);
+
+    modal.show();
+    console.log('✅ Test modal opened successfully');
+  } catch (error) {
+    console.error('❌ Test modal failed:', error);
+    alert('Modal test failed: ' + error.message);
+  }
+}
+
+async function saveType(event) {
+  event.preventDefault();
+
+  const baseUrl = window.env?.VITE_API_URL || 'http://localhost:8000';
+  const formData = {
+    name: document.getElementById('typeName').value,
+    code: document.getElementById('typeCode').value,
+    descriptions: document.getElementById('typeDescription').value,
+    is_active: document.getElementById('typeActive').checked
+  };
+
+  console.log('💾 Saving type:', formData);
+
+  try {
+    let url = `${baseUrl}/incentive/incentive-types`;
+    let method = 'POST';
+    let successMessage = 'Jenis sembako berhasil ditambahkan';
+
+    // If editing, use PUT method with ID
+    if (currentEditType) {
+      url = `${baseUrl}/incentive/incentive-types/${currentEditType.pk}`;
+      method = 'PUT';
+      successMessage = 'Jenis sembako berhasil diperbarui';
+    }
+
+    const response = await fetch(url, {
+      method: method,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(formData),
+      credentials: 'include'
+    });
+
+    console.log(`${method} response status:`, response.status);
+
+    if (response.ok) {
+      const result = await response.json();
+      console.log('Save response:', result);
+
+      // Close modal
+      const modal = bootstrap.Modal.getInstance(document.getElementById('typeModal'));
+      if (modal) modal.hide();
+
+      // Show success notification
+      showSuccessNotification(result.message || successMessage);
+
+      // Reload data
+      loadSembakoData();
+    } else {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+    }
+  } catch (error) {
+    console.error('❌ Error saving type:', error);
+    showErrorNotification(error.message || 'Terjadi kesalahan saat menyimpan data');
+  }
+}
+
+async function loadSembakoData() {
+  const baseUrl = window.env?.VITE_API_URL || 'http://localhost:8000';
+
+  console.log('🚀 Starting API calls to:', baseUrl);
+
+  try {
+    // Construct endpoint URLs
+    const endpoints = [
+      `${baseUrl}/incentive/incentive-types`,
+      `${baseUrl}/incentive/incentive-config`,
+      `${baseUrl}/incentive/employee-incentives`
+    ];
+
+    console.log('🔄 Making parallel fetch requests...');
+    const startTime = Date.now();
+
+    // Fetch all data in parallel
+    const [typesResponse, configsResponse, employeesResponse] = await Promise.all([
+      fetch(endpoints[0]),
+      fetch(endpoints[1]),
+      fetch(endpoints[2])
+    ]);
+
+    const endTime = Date.now();
+    console.log(`⏱️ Fetch requests completed in ${endTime - startTime}ms`);
+
+    // Parse responses with error handling
+    let types, configs, employees;
+
+    try {
+      types = typesResponse.ok ? await typesResponse.json() : { data: [] };
+      console.log('✅ Types data parsed:', types);
+    } catch (e) {
+      console.error('❌ Error parsing types response:', e);
+      types = { data: [] };
+    }
+
+    // Update tables with real data
+    setTimeout(() => {
+      updateTypesTable(types.data || []);
+    }, 100);
+
+  } catch (error) {
+    console.error('❌ Network error loading sembako data:', error);
+  }
+}
+
+function updateTypesTable(types) {
+  const tbody = document.querySelector('#types-tab tbody');
+  if (!tbody) {
+    console.warn('❌ Types table tbody not found in DOM');
+    return;
+  }
+
+  if (!types || types.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" class="text-center">Tidak ada data jenis sembako</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = types.map((type, index) => `
+    <tr>
+      <td>${index + 1}</td>
+      <td>
+        <strong>${type.name || 'Unknown'}</strong>
+      </td>
+      <td>
+        <small>${type.descriptions || 'Tidak ada deskripsi'}</small>
+      </td>
+      <td class="text-center">
+        <span class="badge ${type.is_active ? 'bg-success' : 'bg-danger'}">
+          ${type.is_active ? 'Aktif' : 'Non Aktif'}
+        </span>
+      </td>
+      <td class="text-center">
+        <div class="btn-group">
+          <button class="btn btn-outline-primary btn-sm edit-btn"
+                  data-type-id="${type.pk}"
+                  data-type-name="${type.name || 'Unknown'}"
+                  data-type-code="${type.code || ''}"
+                  data-type-desc="${type.descriptions || ''}"
+                  data-type-active="${type.is_active || false}"
+                  onclick="handleEditClick(this)">
+            <i class="bi bi-pencil"></i>
+          </button>
+          <button class="btn btn-outline-danger btn-sm delete-btn"
+                  data-type-id="${type.pk}"
+                  data-type-name="${type.name || 'Unknown'}"
+                  onclick="handleDeleteClick(this)">
+            <i class="bi bi-trash"></i>
+          </button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}

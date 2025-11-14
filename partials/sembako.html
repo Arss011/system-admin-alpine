@@ -7,7 +7,7 @@
       <p class="text-muted mb-0">Kelola jenis, konfigurasi, dan distribusi sembako karyawan</p>
     </div>
     <div class="d-flex gap-2">
-      <button class="btn btn-primary btn-sm">
+      <button class="btn btn-primary btn-sm" onclick="openCreateTypeModal()">
         <i class="bi bi-plus-lg"></i> Tambah Jenis
       </button>
       <button class="btn btn-success btn-sm">
@@ -15,6 +15,9 @@
       </button>
       <button class="btn btn-info btn-sm">
         <i class="bi bi-person-plus-fill"></i> Berikan Sembako
+      </button>
+      <button class="btn btn-outline-warning btn-sm" onclick="testBootstrapModal()">
+        <i class="bi bi-bug"></i> Test Modal
       </button>
       <button class="btn btn-outline-secondary btn-sm"
               hx-get="./index.html"
@@ -297,11 +300,98 @@
   </div>
 </div>
 
+<!-- MODAL DELETE CONFIRMATION -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title" id="deleteModalLabel">
+          <i class="bi bi-trash me-2"></i>Konfirmasi Hapus
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p>Apakah Anda yakin ingin menghapus data ini?</p>
+        <div class="alert alert-warning">
+          <i class="bi bi-exclamation-triangle me-2"></i>
+          <strong>Peringatan:</strong> Tindakan ini tidak dapat dibatalkan.
+        </div>
+        <p id="deleteItemName" class="mb-0"></p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-danger" onclick="confirmDelete()">
+          <i class="bi bi-trash me-1"></i> Hapus
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CREATE/EDIT INCENTIVE TYPE -->
+<div class="modal fade" id="typeModal" tabindex="-1" aria-labelledby="typeModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="typeModalLabel">
+          <i class="bi bi-box-seam me-2"></i><span id="modalTitle">Tambah Jenis Sembako</span>
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="typeForm" onsubmit="saveType(event)">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="typeName" class="form-label">Nama Jenis <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="typeName" required>
+          </div>
+          <div class="mb-3">
+            <label for="typeCode" class="form-label">Kode <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="typeCode" required>
+          </div>
+          <div class="mb-3">
+            <label for="typeDescription" class="form-label">Deskripsi</label>
+            <textarea class="form-control" id="typeDescription" rows="3"></textarea>
+          </div>
+          <div class="mb-3">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="typeActive" checked>
+              <label class="form-check-label" for="typeActive">
+                Aktif
+              </label>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+          <button type="submit" class="btn btn-primary">
+            <i class="bi bi-save me-1"></i><span id="submitButtonText">Simpan</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 <!-- API Integration Script -->
 <script>
 // Sembako API Integration
 function initializeSembako() {
-  console.log('HTMX content loaded, initializing sembako data...');
+  console.log('🚀 HTMX content loaded, initializing sembako data...');
+
+  // Check Bootstrap availability
+  console.log('🔍 Bootstrap check:', {
+    bootstrap: typeof bootstrap,
+    Modal: typeof bootstrap !== 'undefined' ? typeof bootstrap.Modal : 'N/A',
+    Toast: typeof bootstrap !== 'undefined' ? typeof bootstrap.Toast : 'N/A'
+  });
+
+  // Test button functions exist
+  console.log('🔍 Function check:', {
+    openCreateTypeModal: typeof openCreateTypeModal,
+    testBootstrapModal: typeof testBootstrapModal,
+    handleEditClick: typeof handleEditClick,
+    handleDeleteClick: typeof handleDeleteClick
+  });
 
   // Load data when content is ready
   loadSembakoData();
@@ -478,10 +568,19 @@ function updateTypesTable(types) {
       </td>
       <td class="text-center">
         <div class="btn-group">
-          <button class="btn btn-outline-primary btn-sm" onclick="editType(${JSON.stringify(type).replace(/"/g, '&quot;')})">
+          <button class="btn btn-outline-primary btn-sm edit-btn"
+                  data-type-id="${type.pk}"
+                  data-type-name="${type.name || 'Unknown'}"
+                  data-type-code="${type.code || ''}"
+                  data-type-desc="${type.descriptions || ''}"
+                  data-type-active="${type.is_active || false}"
+                  onclick="handleEditClick(this)">
             <i class="bi bi-pencil"></i>
           </button>
-          <button class="btn btn-outline-danger btn-sm" onclick="deleteType(${type.pk})">
+          <button class="btn btn-outline-danger btn-sm delete-btn"
+                  data-type-id="${type.pk}"
+                  data-type-name="${type.name || 'Unknown'}"
+                  onclick="handleDeleteClick(this)">
             <i class="bi bi-trash"></i>
           </button>
         </div>
@@ -608,15 +707,352 @@ function getTypeName(typeId, configs) {
   return typeId === 1 ? 'Sembako' : `Type ${typeId}`;
 }
 
-function editType(type) {
-  console.log('Edit type:', type);
-  alert(`Edit ${type.name} - This feature is coming soon!`);
+// Global variables to track current operations
+let currentEditType = null;
+let currentDeleteId = null;
+let currentDeleteType = null; // 'type', 'config', or 'employee'
+
+function openCreateTypeModal() {
+  console.log('🔧 CREATE BUTTON CLICKED!');
+  alert('Create button clicked! Check console for details.');
+
+  console.log('🔧 Opening create type modal...');
+  console.log('🔍 Checking Bootstrap:', typeof bootstrap);
+  console.log('🔍 Modal element:', document.getElementById('typeModal'));
+
+  // Check if Bootstrap is loaded
+  if (typeof bootstrap === 'undefined') {
+    console.error('❌ Bootstrap is not loaded!');
+    alert('Bootstrap tidak terload. Silakan refresh halaman.');
+    return;
+  }
+
+  currentEditType = null;
+
+  // Reset form
+  document.getElementById('modalTitle').textContent = 'Tambah Jenis Sembako';
+  document.getElementById('submitButtonText').textContent = 'Simpan';
+  document.getElementById('typeForm').reset();
+  document.getElementById('typeActive').checked = true;
+
+  // Show modal
+  try {
+    const modalElement = document.getElementById('typeModal');
+    console.log('🔍 Modal element found:', modalElement);
+
+    if (!modalElement) {
+      console.error('❌ Modal element not found!');
+      alert('Modal element not found!');
+      return;
+    }
+
+    const modal = new bootstrap.Modal(modalElement);
+    console.log('🔍 Modal instance created:', modal);
+
+    modal.show();
+    console.log('✅ Modal opened successfully');
+  } catch (error) {
+    console.error('❌ Error opening modal:', error);
+    console.error('❌ Error details:', error.stack);
+    alert('Modal error: ' + error.message);
+  }
 }
 
-function deleteType(id) {
-  if (confirm('Apakah Anda yakin ingin menghapus data ini?')) {
-    console.log('Delete type:', id);
-    alert('Delete feature coming soon!');
+function editType(type) {
+  console.log('✏️ Editing type:', type);
+  currentEditType = type;
+  currentDeleteId = type.pk;
+  currentDeleteType = 'type';
+
+  // Update modal title and button
+  document.getElementById('modalTitle').textContent = 'Edit Jenis Sembako';
+  document.getElementById('submitButtonText').textContent = 'Update';
+
+  // Populate form with existing data
+  document.getElementById('typeName').value = type.name || '';
+  document.getElementById('typeCode').value = type.code || '';
+  document.getElementById('typeDescription').value = type.descriptions || '';
+  document.getElementById('typeActive').checked = type.is_active || false;
+
+  // Show modal
+  try {
+    const modal = new bootstrap.Modal(document.getElementById('typeModal'));
+    modal.show();
+    console.log('✅ Edit modal opened successfully');
+  } catch (error) {
+    console.error('❌ Error opening edit modal:', error);
+    // Fallback
+    document.getElementById('typeModal').style.display = 'block';
+    document.getElementById('typeModal').classList.add('show');
+    document.body.classList.add('modal-open');
+  }
+}
+
+function deleteType(id, typeName = 'Jenis Sembako') {
+  console.log('🗑️ Requesting delete for:', id, typeName);
+  currentDeleteId = id;
+  currentDeleteType = 'type';
+
+  // Set item name in confirmation modal
+  document.getElementById('deleteItemName').textContent = `Item: ${typeName}`;
+
+  // Show delete confirmation modal
+  try {
+    const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    modal.show();
+    console.log('✅ Delete confirmation modal opened');
+  } catch (error) {
+    console.error('❌ Error opening delete modal:', error);
+    // Fallback to simple confirmation
+    if (confirm(`Apakah Anda yakin ingin menghapus ${typeName}?`)) {
+      performDelete();
+    }
+  }
+}
+
+async function confirmDelete() {
+  console.log('🔄 Confirming delete...');
+  await performDelete();
+}
+
+async function performDelete() {
+  if (!currentDeleteId) {
+    console.error('❌ No delete ID set');
+    return;
+  }
+
+  const baseUrl = window.env?.VITE_API_URL || 'http://localhost:8000';
+  let url = '';
+
+  // Set URL based on delete type
+  switch (currentDeleteType) {
+    case 'type':
+      url = `${baseUrl}/incentive/incentive-types/${currentDeleteId}`;
+      break;
+    default:
+      console.error('❌ Unknown delete type:', currentDeleteType);
+      return;
+  }
+
+  console.log('🗑️ Deleting:', currentDeleteType, 'ID:', currentDeleteId, 'URL:', url);
+
+  try {
+    // Close delete modal
+    const deleteModal = bootstrap.Modal.getInstance(document.getElementById('deleteModal'));
+    if (deleteModal) deleteModal.hide();
+
+    const response = await fetch(url, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include'
+    });
+
+    console.log('Delete response status:', response.status);
+
+    if (response.ok) {
+      const result = await response.json();
+      console.log('Delete response:', result);
+
+      // Show success notification
+      showSuccessNotification(result.message || 'Data berhasil dihapus');
+
+      // Reload data
+      loadSembakoData();
+    } else {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+    }
+  } catch (error) {
+    console.error('❌ Error deleting:', error);
+    showErrorNotification(error.message || 'Terjadi kesalahan saat menghapus data');
+  } finally {
+    // Clear delete state
+    currentDeleteId = null;
+    currentDeleteType = null;
+  }
+}
+
+function showSuccessNotification(message) {
+  // Create Bootstrap toast notification
+  const toastHtml = `
+    <div class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+      <div class="d-flex">
+        <div class="toast-body">
+          <i class="bi bi-check-circle me-2"></i>${message}
+        </div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
+    </div>
+  `;
+
+  showToast(toastHtml);
+}
+
+function showErrorNotification(message) {
+  const toastHtml = `
+    <div class="toast align-items-center text-white bg-danger border-0" role="alert" aria-live="assertive" aria-atomic="true">
+      <div class="d-flex">
+        <div class="toast-body">
+          <i class="bi bi-exclamation-triangle me-2"></i>${message}
+        </div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
+    </div>
+  `;
+
+  showToast(toastHtml);
+}
+
+function showToast(html) {
+  // Create toast container if not exists
+  let toastContainer = document.getElementById('toastContainer');
+  if (!toastContainer) {
+    toastContainer = document.createElement('div');
+    toastContainer.id = 'toastContainer';
+    toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+    toastContainer.style.zIndex = '9999';
+    document.body.appendChild(toastContainer);
+  }
+
+  // Create and show toast
+  const toastElement = document.createElement('div');
+  toastElement.innerHTML = html;
+  toastContainer.appendChild(toastElement);
+
+  const toast = new bootstrap.Toast(toastElement.querySelector('.toast'));
+  toast.show();
+
+  // Remove toast element after hidden
+  toastElement.querySelector('.toast').addEventListener('hidden.bs.toast', () => {
+    toastElement.remove();
+  });
+}
+
+// Safe button click handlers
+function handleEditClick(button) {
+  const typeId = button.getAttribute('data-type-id');
+  const typeName = button.getAttribute('data-type-name');
+  const typeCode = button.getAttribute('data-type-code');
+  const typeDesc = button.getAttribute('data-type-desc');
+  const typeActive = button.getAttribute('data-type-active') === 'true';
+
+  console.log('📝 Edit button clicked:', { typeId, typeName, typeCode, typeDesc, typeActive });
+
+  const typeData = {
+    pk: parseInt(typeId),
+    name: typeName,
+    code: typeCode,
+    descriptions: typeDesc,
+    is_active: typeActive
+  };
+
+  editType(typeData);
+}
+
+function handleDeleteClick(button) {
+  const typeId = button.getAttribute('data-type-id');
+  const typeName = button.getAttribute('data-type-name');
+
+  console.log('🗑️ Delete button clicked:', { typeId, typeName });
+
+  deleteType(parseInt(typeId), typeName);
+}
+
+// Test function for debugging modal
+function testBootstrapModal() {
+  console.log('🧪 TEST BUTTON CLICKED!');
+
+  // Simple test first
+  alert('Test button clicked! Check console for details.');
+
+  console.log('🧪 Testing Bootstrap modal...');
+  console.log('🔍 Bootstrap availability:', typeof bootstrap);
+
+  if (typeof bootstrap === 'undefined') {
+    console.error('❌ Bootstrap not loaded!');
+    alert('Bootstrap tidak terload! Cek console untuk detail.');
+    return;
+  }
+
+  try {
+    const modalEl = document.getElementById('typeModal');
+    console.log('🔍 Modal element:', modalEl);
+
+    if (!modalEl) {
+      console.error('❌ Modal element not found!');
+      alert('Modal element not found!');
+      return;
+    }
+
+    const modal = new bootstrap.Modal(modalEl);
+    console.log('🔍 Modal instance created:', modal);
+
+    modal.show();
+    console.log('✅ Test modal opened successfully');
+  } catch (error) {
+    console.error('❌ Test modal failed:', error);
+    alert('Modal test failed: ' + error.message);
+  }
+}
+
+async function saveType(event) {
+  event.preventDefault();
+
+  const baseUrl = window.env?.VITE_API_URL || 'http://localhost:8000';
+  const formData = {
+    name: document.getElementById('typeName').value,
+    code: document.getElementById('typeCode').value,
+    descriptions: document.getElementById('typeDescription').value,
+    is_active: document.getElementById('typeActive').checked
+  };
+
+  console.log('💾 Saving type:', formData);
+
+  try {
+    let url = `${baseUrl}/incentive/incentive-types`;
+    let method = 'POST';
+    let successMessage = 'Jenis sembako berhasil ditambahkan';
+
+    // If editing, use PUT method with ID
+    if (currentEditType) {
+      url = `${baseUrl}/incentive/incentive-types/${currentEditType.pk}`;
+      method = 'PUT';
+      successMessage = 'Jenis sembako berhasil diperbarui';
+    }
+
+    const response = await fetch(url, {
+      method: method,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(formData),
+      credentials: 'include'
+    });
+
+    console.log(`${method} response status:`, response.status);
+
+    if (response.ok) {
+      const result = await response.json();
+      console.log('Save response:', result);
+
+      // Close modal
+      const modal = bootstrap.Modal.getInstance(document.getElementById('typeModal'));
+      if (modal) modal.hide();
+
+      // Show success notification
+      showSuccessNotification(result.message || successMessage);
+
+      // Reload data
+      loadSembakoData();
+    } else {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+    }
+  } catch (error) {
+    console.error('❌ Error saving type:', error);
+    showErrorNotification(error.message || 'Terjadi kesalahan saat menyimpan data');
   }
 }
 
