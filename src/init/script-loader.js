@@ -135,11 +135,13 @@ async function initializeSembakoPage() {
       'core/api-client.js',
       'services/incentive-service.js',
       'core/modal-service.js',
-      'pages/sembako-page.js'
+      'components/base/pagination-component.js',
+      'pages/sembako-page.js',
+      'pages/incentive-config-page.js'
     ]);
 
     // Wait for global objects to be available
-    const requiredGlobals = ['EventBus', 'ApiClient', 'IncentiveService', 'ModalService', 'SembakoPage'];
+    const requiredGlobals = ['EventBus', 'ApiClient', 'IncentiveService', 'ModalService', 'PaginationComponent', 'SembakoPage', 'IncentiveConfigPage'];
     await waitForGlobals(requiredGlobals);
 
     console.log('📦 All dependencies loaded, initializing page...');
@@ -151,12 +153,18 @@ async function initializeSembakoPage() {
     // Make globally available
     window.sembakoPage = sembakoPage;
 
+    // Initialize incentive config page
+    const incentiveConfigPage = new IncentiveConfigPage();
+    await incentiveConfigPage.initialize();
+    window.incentiveConfigPage = incentiveConfigPage;
+
     // Setup refresh handlers for CRUD operations
     setupRefreshHandlers();
 
     console.log('✅ Sembako Page initialized successfully');
+    console.log('✅ Incentive Config Page initialized successfully');
 
-    return sembakoPage;
+    return { sembakoPage, incentiveConfigPage };
 
   } catch (error) {
     console.error('❌ Failed to initialize Sembako Page:', error);
