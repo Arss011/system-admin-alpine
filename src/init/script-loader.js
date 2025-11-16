@@ -151,6 +151,9 @@ async function initializeSembakoPage() {
     // Make globally available
     window.sembakoPage = sembakoPage;
 
+    // Setup refresh handlers for CRUD operations
+    setupRefreshHandlers();
+
     console.log('✅ Sembako Page initialized successfully');
 
     return sembakoPage;
@@ -207,6 +210,35 @@ function waitForGlobals(varNames, timeout = 10000) {
 
     checkGlobals();
   });
+}
+
+/**
+ * Handle page refresh after CRUD operations
+ */
+function setupRefreshHandlers() {
+  // Listen for successful CRUD operations
+  if (window.eventBus) {
+    window.eventBus.on(EventTypes.INCENTIVE_TYPE_CREATED, () => {
+      if (window.navigationHeaderInstance) {
+        console.log('🔄 Refreshing page after type creation...');
+        window.navigationHeaderInstance.refreshCurrentPage();
+      }
+    });
+
+    window.eventBus.on(EventTypes.INCENTIVE_TYPE_UPDATED, () => {
+      if (window.navigationHeaderInstance) {
+        console.log('🔄 Refreshing page after type update...');
+        window.navigationHeaderInstance.refreshCurrentPage();
+      }
+    });
+
+    window.eventBus.on(EventTypes.INCENTIVE_TYPE_DELETED, () => {
+      if (window.navigationHeaderInstance) {
+        console.log('🔄 Refreshing page after type deletion...');
+        window.navigationHeaderInstance.refreshCurrentPage();
+      }
+    });
+  }
 }
 
 /**

@@ -468,33 +468,56 @@ function navigationHeader() {
           this.currentActivePage = e.state.page;
           this.updatePageTitle(e.state.page);
           this.loadPageContent(e.state.page);
-          this.setActiveNav({ currentTarget: document.querySelector(`[data-page="${e.state.page}"]`) }, e.state.page);
+          // Restore navigation state after content loads
+          setTimeout(() => {
+            this.restoreActiveNavigation(e.state.page);
+          }, 300);
         }
       });
     },
 
     setActiveNav(event, page) {
-      // Remove active class from all nav items
+      // Remove active class from all nav items and dropdowns
       document.querySelectorAll('.nav-item').forEach(item => {
         item.classList.remove('active');
+      });
+      document.querySelectorAll('.dropdown').forEach(dropdown => {
+        dropdown.classList.remove('active');
       });
 
       // Handle special case for Sembako (incentive submenu)
       if (page === 'sembako') {
         // Find and activate the incentive dropdown parent
-        const incentiveDropdown = document.getElementById('incentiveDropdown').closest('.nav-item');
+        const incentiveDropdown = document.getElementById('incentiveDropdown');
         if (incentiveDropdown) {
-          incentiveDropdown.classList.add('active');
+          // Add active to the dropdown container
+          incentiveDropdown.closest('.dropdown').classList.add('active');
+
+          // Add show class to display the dropdown menu
+          const dropdownMenu = incentiveDropdown.nextElementSibling;
+          if (dropdownMenu && dropdownMenu.classList.contains('dropdown-menu')) {
+            dropdownMenu.classList.add('show');
+          }
         }
 
-        // Also add active to the clicked element if it's a nav item
-        if (event.currentTarget && event.currentTarget.classList.contains('nav-item')) {
+        // Also add active to the clicked element if it's a dropdown-item
+        if (event.currentTarget && event.currentTarget.classList.contains('dropdown-item')) {
           event.currentTarget.classList.add('active');
         }
       } else {
         // Add active class to clicked item for normal navigation
         if (event.currentTarget) {
-          event.currentTarget.classList.add('active');
+          // Handle dropdown items
+          if (event.currentTarget.classList.contains('dropdown-item')) {
+            event.currentTarget.classList.add('active');
+            // Also activate parent dropdown
+            const parentDropdown = event.currentTarget.closest('.dropdown');
+            if (parentDropdown) {
+              parentDropdown.classList.add('active');
+            }
+          } else if (event.currentTarget.classList.contains('nav-item')) {
+            event.currentTarget.classList.add('active');
+          }
         }
       }
 
@@ -527,10 +550,10 @@ function navigationHeader() {
     },
 
     updateURLState(page) {
-      // Update URL without full page reload
+      // Update URL without full page reload, replacing instead of pushing
       const url = new URL(window.location);
       url.searchParams.set('page', page);
-      window.history.pushState({ page }, '', url);
+      window.history.replaceState({ page }, '', url);
     },
 
     loadPageContent(page) {
@@ -567,21 +590,10 @@ function navigationHeader() {
           this.updatePageTitle(savedPage);
           this.loadPageContent(savedPage);
 
-          // Set active indicator
-          if (savedPage === 'sembako') {
-            const incentiveDropdown = document.getElementById('incentiveDropdown').closest('.nav-item');
-            if (incentiveDropdown) {
-              incentiveDropdown.classList.add('active');
-            }
-          } else {
-            // Find the nav item for this page and activate it
-            document.querySelectorAll('.nav-item').forEach(item => {
-              const href = item.getAttribute('href') || item.getAttribute('hx-get');
-              if (href && href.includes(savedPage)) {
-                item.classList.add('active');
-              }
-            });
-          }
+          // Use the helper to restore proper navigation state
+          setTimeout(() => {
+            this.restoreActiveNavigation(savedPage);
+          }, 300);
         }, 500);
       }
     },
@@ -603,20 +615,51 @@ function navigationHeader() {
         </div>
       `;
 
+      // Store current page state to prevent navigation change
+      const storedPage = this.currentActivePage;
+
       // Reload the current page content after a short delay
       setTimeout(() => {
-        this.loadPageContent(currentPage);
+        // Ensure we don't change the current page during refresh
+        this.currentActivePage = storedPage;
+        this.loadPageContent(storedPage);
 
-        // Restore active indicator after content loads
+        // Restore active navigation state after content loads
         setTimeout(() => {
-          if (currentPage === 'sembako') {
-            const incentiveDropdown = document.getElementById('incentiveDropdown').closest('.nav-item');
-            if (incentiveDropdown) {
-              incentiveDropdown.classList.add('active');
-            }
-          }
-        }, 100);
+          this.restoreActiveNavigation(storedPage);
+        }, 200);
       }, 500);
+    },
+
+    // Helper to restore active navigation state
+    restoreActiveNavigation(page) {
+      // Clear all active states first
+      document.querySelectorAll('.nav-item, .dropdown').forEach(item => {
+        item.classList.remove('active');
+      });
+
+      if (page === 'sembako') {
+        // Activate incentive dropdown for sembako
+        const incentiveDropdown = document.getElementById('incentiveDropdown');
+        if (incentiveDropdown) {
+          incentiveDropdown.closest('.dropdown').classList.add('active');
+
+          // Also activate the specific sembako menu item
+          const sembakoItem = document.querySelector('[hx-get*="sembako.html"]');
+          if (sembakoItem) {
+            sembakoItem.classList.add('active');
+          }
+        }
+      } else {
+        // Find and activate regular nav items
+        const navItems = document.querySelectorAll('.nav-item');
+        navItems.forEach(item => {
+          const href = item.getAttribute('href') || item.getAttribute('hx-get');
+          if (href && href.includes(page)) {
+            item.classList.add('active');
+          }
+        });
+      }
     }
   };
 }

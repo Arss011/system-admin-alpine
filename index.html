@@ -103,29 +103,31 @@
             </a>
 
             <!-- Incentive Menu with Bootstrap Dropdown -->
-            <div class="dropdown nav-dropdown">
-              <button class="nav-item dropdown-toggle"
-                      type="button"
-                      id="incentiveDropdown"
-                      data-bs-toggle="dropdown"
-                      aria-expanded="false">
+            <div class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle"
+                 href="#"
+                 id="incentiveDropdown"
+                 role="button"
+                 data-bs-toggle="dropdown"
+                 aria-expanded="false"
+                 @click="setActiveNav($event, 'incentive')">
                 <i class="bi bi-gift"></i>
                 <span>Incentive</span>
-                <i class="bi bi-chevron-down dropdown-arrow-sm"></i>
-              </button>
+              </a>
               <ul class="dropdown-menu" aria-labelledby="incentiveDropdown">
                 <li>
                   <button class="dropdown-item"
                           hx-get="./partials/sembako.html"
                           hx-target="#main-content"
                           hx-swap="innerHTML"
-                          onclick="window.navigationHeaderInstance.setActiveNav(event, 'sembako')">
+                          @click="setActiveNav($event, 'sembako')">
                     <i class="bi bi-box-seam"></i>
                     Sembako
                   </button>
                 </li>
+                <li><hr class="dropdown-divider"></li>
                 <li>
-                  <a href="#" class="dropdown-item" onclick="event.preventDefault()">
+                  <a class="dropdown-item" href="#" @click="event.preventDefault(); setActiveNav($event, 'other-incentives')">
                     <i class="bi bi-star"></i>
                     Other Incentives
                   </a>
@@ -197,29 +199,31 @@
           </div> -->
 
           <!-- User Profile Dropdown -->
-          <div class="dropdown nav-item-wrapper">
-            <button class="user-profile-btn dropdown-toggle"
-                    type="button"
-                    id="userProfileDropdown"
-                    data-bs-toggle="dropdown"
-                    aria-expanded="false">
-              <img src="./assets/img/users.png" alt="User Avatar" class="user-avatar">
-              <div class="user-info-text">
-                <div class="user-name" x-text="username"></div>
-                <div class="user-role" x-text="userRole"></div>
+          <div class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle d-flex align-items-center"
+               href="#"
+               id="userProfileDropdown"
+               role="button"
+               data-bs-toggle="dropdown"
+               aria-expanded="false">
+              <img src="./assets/img/users.png" alt="User Avatar" class="user-avatar me-2">
+              <div class="d-none d-md-block">
+                <div class="small fw-semibold" x-text="username"></div>
+                <div class="small text-muted" x-text="userRole"></div>
               </div>
-              <i class="bi bi-chevron-down dropdown-arrow"></i>
-            </button>
+            </a>
 
-            <ul class="dropdown-menu profile-dropdown" aria-labelledby="userProfileDropdown">
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userProfileDropdown">
               <li>
-                <div class="profile-header dropdown-header">
-                  <img src="./assets/img/users.png" alt="User Avatar" class="profile-avatar">
-                  <div>
-                    <h6 x-text="username"></h6>
-                    <p x-text="userEmail"></p>
+                <h6 class="dropdown-header">
+                  <div class="d-flex align-items-center">
+                    <img src="./assets/img/users.png" alt="User Avatar" class="rounded-circle me-2" width="32" height="32">
+                    <div>
+                      <div class="fw-semibold" x-text="username"></div>
+                      <div class="small text-muted" x-text="userEmail"></div>
+                    </div>
                   </div>
-                </div>
+                </h6>
               </li>
               <li><hr class="dropdown-divider"></li>
               <li>
@@ -227,7 +231,7 @@
                         hx-get="./partials/set-roles.html"
                         hx-target="#main-content"
                         hx-swap="innerHTML">
-                  <i class="bi bi-people-fill"></i> Set Roles
+                  <i class="bi bi-people-fill me-2"></i> Set Roles
                 </button>
               </li>
               <li>
@@ -235,13 +239,13 @@
                         hx-get="./partials/sembako.html"
                         hx-target="#main-content"
                         hx-swap="innerHTML">
-                  <i class="bi bi-people-fill"></i> Sembako
+                  <i class="bi bi-box-seam me-2"></i> Sembako
                 </button>
               </li>
               <li><hr class="dropdown-divider"></li>
               <li>
-                <button class="dropdown-item logout-item" onclick="window.portalAppInstance.logout()">
-                  <i class="bi bi-box-arrow-right"></i> Logout
+                <button class="dropdown-item text-danger" onclick="window.portalAppInstance.logout()">
+                  <i class="bi bi-box-arrow-right me-2"></i> Logout
                 </button>
               </li>
             </ul>
