@@ -73,8 +73,15 @@ class ApiClient {
       headers: { ...this.defaultHeaders },
     };
 
+    // Include credentials for cookies
     if (this.credentials) {
       config.credentials = 'include';
+    }
+
+    // Add Bearer token from cookies
+    const token = this._getAccessToken();
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
 
     if (data && (method === 'POST' || method === 'PUT')) {
@@ -83,9 +90,15 @@ class ApiClient {
 
     try {
       console.log(`🔍 API ${method} ${url}`);
+      console.log(`🔑 Token present: ${!!token}`);
 
       const response = await fetch(url, config);
       console.log(`📊 Response ${response.status}: ${response.statusText}`);
+
+      // Handle 401 Unauthorized
+      if (response.status === 401) {
+        throw new ApiError('Unauthorized: Invalid or expired token', 401);
+      }
 
       if (!response.ok) {
         const errorData = await this._parseError(response);
@@ -103,6 +116,85 @@ class ApiClient {
 
       console.error('❌ API Error:', error);
       throw new ApiError(`Network error: ${error.message}`, 0, error);
+    }
+  }
+
+  /**
+   * Get access token from cookies
+   * @private
+   * @returns {string|null} Access token or null
+   */
+  _getAccessToken() {
+    try {
+      // Try to get token from cookies
+      const cookies = document.cookie.split(';');
+      for (let cookie of cookies) {
+        const [name, value] = cookie.trim().split('=');
+        if (name === 'access_token') {
+          return value;
+        }
+      }
+
+      // Fallback to localStorage or other storage
+      const localToken = localStorage.getItem('access_token');
+      if (localToken) {
+        return localToken;
+      }
+
+      // Check for token in sessionStorage
+      const sessionToken = sessionStorage.getItem('access_token');
+      if (sessionToken) {
+        return sessionToken;
+      }
+
+      console.log('🔑 No access token found in cookies, localStorage, or sessionStorage');
+      return null;
+    } catch (error) {
+      console.error('❌ Error getting access token:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Set access token (for future use)
+   * @param {string} token - Access token
+   * @param {boolean} remember - Whether to remember token
+   */
+  setAccessToken(token, remember = false) {
+    try {
+      if (remember) {
+        // Set in cookie with longer expiration
+        const expires = new Date();
+        expires.setDate(expires.getDate() + 30); // 30 days
+        document.cookie = `access_token=${token}; expires=${expires.toUTCString()}; path=/`;
+        localStorage.setItem('access_token', token);
+      } else {
+        // Set in session storage
+        document.cookie = `access_token=${token}; path=/`;
+        sessionStorage.setItem('access_token', token);
+      }
+
+      console.log('🔑 Access token set successfully');
+    } catch (error) {
+      console.error('❌ Error setting access token:', error);
+    }
+  }
+
+  /**
+   * Clear access token
+   */
+  clearAccessToken() {
+    try {
+      // Clear from cookie
+      document.cookie = 'access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+
+      // Clear from storage
+      localStorage.removeItem('access_token');
+      sessionStorage.removeItem('access_token');
+
+      console.log('🔑 Access token cleared successfully');
+    } catch (error) {
+      console.error('❌ Error clearing access token:', error);
     }
   }
 

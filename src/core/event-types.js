@@ -53,6 +53,9 @@ const EventTypes = {
   INCENTIVE_EMPLOYEE_UPDATED: 'incentive:employee:updated',
   INCENTIVE_EMPLOYEE_DELETED: 'incentive:employee:deleted',
   INCENTIVE_EMPLOYEE_LOADED: 'incentive:employee:loaded',
+  EMPLOYEE_INCENTIVE_CREATED: 'employee:incentive:created',
+  EMPLOYEE_INCENTIVE_UPDATED: 'employee:incentive:updated',
+  EMPLOYEE_INCENTIVE_DELETED: 'employee:incentive:deleted',
 
   // User management events
   USER_CREATED: 'user:created',

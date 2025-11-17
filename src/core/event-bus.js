@@ -144,56 +144,10 @@ class EventBus {
  */
 const eventBus = new EventBus();
 
-/**
- * Event Types Constants
- */
-const EventTypes = {
-  // Navigation events
-  NAVIGATION_CHANGED: 'navigation:changed',
-  PAGE_LOADED: 'page:loaded',
-
-  // Modal events
-  MODAL_OPEN: 'modal:open',
-  MODAL_CLOSE: 'modal:close',
-  MODAL_SHOWN: 'modal:shown',
-  MODAL_HIDDEN: 'modal:hidden',
-
-  // Data events
-  DATA_LOADING: 'data:loading',
-  DATA_LOADED: 'data:loaded',
-  DATA_ERROR: 'data:error',
-  DATA_REFRESH: 'data:refresh',
-
-  // Incentive events
-  INCENTIVE_TYPE_CREATED: 'incentive:type:created',
-  INCENTIVE_TYPE_UPDATED: 'incentive:type:updated',
-  INCENTIVE_TYPE_DELETED: 'incentive:type:deleted',
-  INCENTIVE_CONFIG_CREATED: 'incentive:config:created',
-  INCENTIVE_CONFIG_UPDATED: 'incentive:config:updated',
-  INCENTIVE_CONFIG_DELETED: 'incentive:config:deleted',
-
-  // Form events
-  FORM_SUBMIT: 'form:submit',
-  FORM_VALIDATION_FAILED: 'form:validation:failed',
-  FORM_RESET: 'form:reset',
-
-  // Notification events
-  NOTIFICATION_SUCCESS: 'notification:success',
-  NOTIFICATION_ERROR: 'notification:error',
-  NOTIFICATION_WARNING: 'notification:warning',
-  NOTIFICATION_INFO: 'notification:info',
-
-  // User events
-  USER_LOGIN: 'user:login',
-  USER_LOGOUT: 'user:logout',
-  USER_PROFILE_UPDATED: 'user:profile:updated'
-};
-
 // Export for use in other modules
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { EventBus, eventBus, EventTypes };
+  module.exports = { EventBus, eventBus };
 } else {
   window.EventBus = EventBus;
   window.eventBus = eventBus;
-  window.EventTypes = EventTypes;
 }

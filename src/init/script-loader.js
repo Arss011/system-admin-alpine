@@ -125,6 +125,12 @@ class ScriptLoader {
  */
 async function initializeSembakoPage() {
   try {
+    // Prevent duplicate initialization
+    if (window.sembakoPage && window.incentiveConfigPage && window.employeeIncentivePage) {
+      console.log('🔄 Sembako pages already initialized, skipping...');
+      return { sembakoPage: window.sembakoPage, incentiveConfigPage: window.incentiveConfigPage, employeeIncentivePage: window.employeeIncentivePage };
+    }
+
     console.log('🚀 Initializing Sembako Page...');
 
     const loader = new ScriptLoader();
@@ -137,11 +143,12 @@ async function initializeSembakoPage() {
       'core/modal-service.js',
       'components/base/pagination-component.js',
       'pages/sembako-page.js',
-      'pages/incentive-config-page.js'
+      'pages/incentive-config-page.js',
+      'pages/employee-incentive-page.js'
     ]);
 
     // Wait for global objects to be available
-    const requiredGlobals = ['EventBus', 'ApiClient', 'IncentiveService', 'ModalService', 'PaginationComponent', 'SembakoPage', 'IncentiveConfigPage'];
+    const requiredGlobals = ['EventBus', 'ApiClient', 'IncentiveService', 'ModalService', 'PaginationComponent', 'SembakoPage', 'IncentiveConfigPage', 'EmployeeIncentivePage'];
     await waitForGlobals(requiredGlobals);
 
     console.log('📦 All dependencies loaded, initializing page...');
@@ -158,13 +165,19 @@ async function initializeSembakoPage() {
     await incentiveConfigPage.initialize();
     window.incentiveConfigPage = incentiveConfigPage;
 
+    // Initialize employee incentive page
+    const employeeIncentivePage = new EmployeeIncentivePage();
+    await employeeIncentivePage.initialize();
+    window.employeeIncentivePage = employeeIncentivePage;
+
     // Setup refresh handlers for CRUD operations
     setupRefreshHandlers();
 
     console.log('✅ Sembako Page initialized successfully');
     console.log('✅ Incentive Config Page initialized successfully');
+    console.log('✅ Employee Incentive Page initialized successfully');
 
-    return { sembakoPage, incentiveConfigPage };
+    return { sembakoPage, incentiveConfigPage, employeeIncentivePage };
 
   } catch (error) {
     console.error('❌ Failed to initialize Sembako Page:', error);
@@ -246,6 +259,28 @@ function setupRefreshHandlers() {
         window.navigationHeaderInstance.refreshCurrentPage();
       }
     });
+
+    // Employee incentive events
+    window.eventBus.on(EventTypes.EMPLOYEE_INCENTIVE_CREATED, () => {
+      if (window.navigationHeaderInstance) {
+        console.log('🔄 Refreshing page after employee incentive creation...');
+        window.navigationHeaderInstance.refreshCurrentPage();
+      }
+    });
+
+    window.eventBus.on(EventTypes.EMPLOYEE_INCENTIVE_UPDATED, () => {
+      if (window.navigationHeaderInstance) {
+        console.log('🔄 Refreshing page after employee incentive update...');
+        window.navigationHeaderInstance.refreshCurrentPage();
+      }
+    });
+
+    window.eventBus.on(EventTypes.EMPLOYEE_INCENTIVE_DELETED, () => {
+      if (window.navigationHeaderInstance) {
+        console.log('🔄 Refreshing page after employee incentive deletion...');
+        window.navigationHeaderInstance.refreshCurrentPage();
+      }
+    });
   }
 }
 
@@ -276,14 +311,18 @@ if (typeof module !== 'undefined' && module.exports) {
   window.waitForGlobals = waitForGlobals;
 }
 
-// Auto-initialize when DOM is ready
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => {
+// Auto-initialize when DOM is ready - but only if not already initialized
+if (!window.sembakoPageInitialized) {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      initializeSembakoPage().catch(console.error);
+      handleHtmxLoading();
+      window.sembakoPageInitialized = true;
+    });
+  } else {
+    // Already loaded
     initializeSembakoPage().catch(console.error);
     handleHtmxLoading();
-  });
-} else {
-  // Already loaded
-  initializeSembakoPage().catch(console.error);
-  handleHtmxLoading();
+    window.sembakoPageInitialized = true;
+  }
 }

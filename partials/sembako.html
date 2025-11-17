@@ -13,7 +13,7 @@
       <button class="btn btn-success btn-sm" id="createConfigBtn">
         <i class="bi bi-gear-fill"></i> Konfigurasi
       </button>
-      <button class="btn btn-info btn-sm">
+      <button class="btn btn-info btn-sm" id="createEmployeeBtn">
         <i class="bi bi-person-plus-fill"></i> Berikan Sembako
       </button>
       <button class="btn btn-outline-warning btn-sm" id="testModalBtn">
@@ -245,37 +245,21 @@
                   <th>Karyawan</th>
                   <th>Email</th>
                   <th>Jenis Sembako</th>
+                  <th>Periode</th>
                   <th>Catatan</th>
                   <th width="15%" class="text-center">Status</th>
                   <th width="10%" class="text-center">Aksi</th>
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td>1</td>
-                  <td>
-                    <strong>Tidak diketahui</strong>
-                  </td>
-                  <td>
-                    <span>yuga@fiber.net.id</span>
-                  </td>
-                  <td>
-                    <span class="badge bg-primary">Sembako</span>
-                  </td>
-                  <td>
-                    <small>Tidak ada catatan</small>
-                  </td>
-                  <td class="text-center">
-                    <span class="badge bg-success">Aktif</span>
-                  </td>
-                  <td class="text-center">
-                    <button class="btn btn-outline-primary btn-sm">
-                      <i class="bi bi-pencil"></i>
-                    </button>
-                  </td>
-                </tr>
+                <!-- Data will be populated by JavaScript -->
               </tbody>
             </table>
+          </div>
+
+          <!-- Pagination -->
+          <div class="card-footer bg-light">
+            <div id="employeePagination"></div>
           </div>
         </div>
       </div>
@@ -408,5 +392,86 @@
   </div>
 </div>
 
+<!-- MODAL CREATE/EDIT EMPLOYEE INCENTIVE -->
+<div class="modal fade" id="employeeModal" tabindex="-1" aria-labelledby="employeeModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="employeeModalLabel">
+          <i class="bi bi-person-plus me-2"></i><span>Berikan Incentive Karyawan</span>
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="employeeForm">
+        <div class="modal-body">
+          <!-- Employee Search Section -->
+          <div class="mb-3">
+            <label for="employeeSearchInput" class="form-label">Cari Karyawan <span class="text-danger">*</span></label>
+            <div class="position-relative">
+              <input type="text"
+                     class="form-control"
+                     id="employeeSearchInput"
+                     placeholder="Masukkan nama atau email karyawan..."
+                     autocomplete="off">
+              <div id="employeeSuggestions" class="suggestion-container position-absolute w-100 bg-white border rounded shadow-lg mt-1" style="z-index: 1000; display: none;">
+              </div>
+            </div>
+
+            <!-- Selected Employee Display -->
+            <div id="selectedEmployeeDisplay" style="display: none;">
+            </div>
+          </div>
+
+          <!-- Hidden Employee Fields -->
+          <input type="hidden" id="employeeId" required>
+          <input type="hidden" id="employeeEmail" required>
+          <input type="hidden" id="employeeName" required>
+
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="employeeTypeId" class="form-label">Jenis Incentive <span class="text-danger">*</span></label>
+              <select class="form-select" id="employeeTypeId" required>
+                <option value="">Pilih Jenis Incentive</option>
+                <option value="1">Sembako</option>
+                <option value="2">Tunjangan</option>
+                <option value="3">Bonus</option>
+              </select>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="employeePeriod" class="form-label">Periode <span class="text-danger">*</span></label>
+              <input type="month" class="form-control" id="employeePeriod" required>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label for="employeeNotes" class="form-label">Catatan</label>
+            <textarea class="form-control" id="employeeNotes" rows="2" placeholder="Catatan untuk incentive ini..."></textarea>
+          </div>
+
+          <div class="mb-3">
+            <label for="employeeDescription" class="form-label">Deskripsi</label>
+            <textarea class="form-control" id="employeeDescription" rows="3" placeholder="Detail keterangan tentang incentive ini..."></textarea>
+          </div>
+
+          <div class="mb-3">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="employeeActive" checked>
+              <label class="form-check-label" for="employeeActive">
+                Aktif
+              </label>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+          <button type="submit" class="btn btn-primary">
+            <i class="bi bi-save me-1"></i>Berikan
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 <!-- Bootstrap JS is already loaded in index.html -->
-<script src="../src/init/script-loader.js"></script>
+<script src="../src/init/script-loader.js?v=20251116205000"></script>

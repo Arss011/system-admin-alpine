@@ -129,20 +129,20 @@ class ConfigService {
    * @private
    */
   _loadFromEnvironment() {
-    // These would be actual environment variables in real deployment
+    // Use browser environment variables from window.env
     const envConfig = {
       api: {
-        baseUrl: process?.env?.VITE_API_URL || process?.env?.API_URL,
-        timeout: parseInt(process?.env?.API_TIMEOUT) || 10000
+        baseUrl: window.env?.VITE_API_URL || 'http://localhost:8000',
+        timeout: parseInt(window.env?.API_TIMEOUT) || 10000
       },
       auth: {
-        tokenKey: process?.env?.AUTH_TOKEN_KEY || 'auth_token',
-        refreshTokenKey: process?.env?.REFRESH_TOKEN_KEY || 'refresh_token'
+        tokenKey: window.env?.AUTH_TOKEN_KEY || 'access_token',
+        refreshTokenKey: window.env?.REFRESH_TOKEN_KEY || 'refresh_token'
       },
       app: {
-        name: process?.env?.APP_NAME || 'System Administration',
-        version: process?.env?.APP_VERSION || '1.0.0',
-        debug: process?.env?.DEBUG === 'true'
+        name: window.env?.APP_NAME || 'System Administration',
+        version: window.env?.APP_VERSION || '1.0.0',
+        debug: window.env?.DEBUG === 'true'
       }
     };
 
